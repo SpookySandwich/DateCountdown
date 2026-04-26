@@ -53,13 +53,8 @@ internal sealed class StartMenuService
         }
     }
 
-    public async Task UpdateLiveTileAsync(string title, string content)
+    public Task UpdateLiveTileAsync(string title, string content)
     {
-        if (!await IsPinnedAsync())
-        {
-            return;
-        }
-
         try
         {
             string xml = $"""
@@ -84,6 +79,8 @@ internal sealed class StartMenuService
         catch
         {
         }
+
+        return Task.CompletedTask;
     }
 
     private static async Task<AppListEntry?> GetAppListEntryAsync()

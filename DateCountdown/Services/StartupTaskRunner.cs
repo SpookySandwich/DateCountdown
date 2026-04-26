@@ -21,10 +21,11 @@ internal sealed class StartupTaskRunner
         _startupFeatureService = new StartupFeatureService(!isWindows11OrGreater, _startupNotificationService);
     }
 
-    public async Task RunAsync()
+    public async Task<bool> RunAsync()
     {
         DateTimeOffset now = DateTimeOffset.Now;
         CountdownState state = _startupFeatureService.NormalizeState(_settingsStore.Load(now));
+        CountdownPreferences preferences = _settingsStore.LoadPreferences();
         CountdownDisplayText displayText = CreateDisplayText();
 
         foreach (CountdownItem countdown in state.Countdowns)
@@ -46,7 +47,8 @@ internal sealed class StartupTaskRunner
             await _startMenuService.UpdateLiveTileAsync(daysLeft, displayText.FormatTitle(state.Title));
         }
 
-        await _startupFeatureService.ReconcileAsync(state);
+        await _startupFeatureService.ReconcileAsync(state, preferences);
+        return preferences.OpenWindowAtStartup;
     }
 
     private CountdownDisplayText CreateDisplayText()

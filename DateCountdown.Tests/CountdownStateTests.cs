@@ -1,5 +1,6 @@
 using DateCountdown.Core;
 using System;
+using System.Linq;
 using Xunit;
 
 namespace DateCountdown.Tests;
@@ -331,5 +332,28 @@ public sealed class CountdownStateTests
         Assert.Equal("first", updated.SelectedCountdownId);
         Assert.Equal("First", updated.Title);
         Assert.False(updated.CanRemoveCountdown);
+    }
+
+    [Fact]
+    public void SortByDaysLeft_OrdersByRemainingDaysAndPreservesSelection()
+    {
+        DateTimeOffset now = new(2026, 4, 26, 0, 0, 0, TimeSpan.Zero);
+        CountdownState state = new CountdownState(
+            new[]
+            {
+                new CountdownItem("later", "Later", now.AddDays(30)),
+                new CountdownItem("soon", "Soon", now.AddDays(5)),
+                new CountdownItem("today", "Today", now)
+            },
+            selectedCountdownId: "later",
+            tileEnabled: true,
+            toastEnabled: false);
+
+        CountdownState sorted = state.SortByDaysLeft(now);
+
+        Assert.Equal(new[] { "today", "soon", "later" }, sorted.Countdowns.Select(item => item.Id));
+        Assert.Equal("later", sorted.SelectedCountdownId);
+        Assert.Equal("Later", sorted.Title);
+        Assert.True(sorted.TileEnabled);
     }
 }

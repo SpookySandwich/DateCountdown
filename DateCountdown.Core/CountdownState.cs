@@ -145,6 +145,17 @@ namespace DateCountdown.Core
             return new CountdownState(countdowns, selectedCountdownId, TileEnabled, toastEnabled: false);
         }
 
+        public CountdownState SortByDaysLeft(DateTimeOffset now)
+        {
+            List<CountdownItem> countdowns = Countdowns
+                .OrderBy(item => CountdownLogic.CalculateDaysLeft(item.TargetDate, now))
+                .ThenBy(item => item.Title, StringComparer.CurrentCultureIgnoreCase)
+                .ThenBy(item => item.Id, StringComparer.Ordinal)
+                .ToList();
+
+            return new CountdownState(countdowns, SelectedCountdownId, TileEnabled, toastEnabled: false);
+        }
+
         private static IEnumerable<CountdownItem> Deduplicate(IEnumerable<CountdownItem?>? countdowns)
         {
             HashSet<string> ids = new HashSet<string>(StringComparer.Ordinal);

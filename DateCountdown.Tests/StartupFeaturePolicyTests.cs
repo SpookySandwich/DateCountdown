@@ -9,20 +9,28 @@ public sealed class StartupFeaturePolicyTests
     private static readonly DateTimeOffset TargetDate = new(2026, 5, 8, 0, 0, 0, TimeSpan.Zero);
 
     [Theory]
-    [InlineData(false, false, false, false)]
-    [InlineData(false, true, false, true)]
-    [InlineData(false, false, true, false)]
-    [InlineData(false, true, true, true)]
-    [InlineData(true, false, false, false)]
-    [InlineData(true, true, false, true)]
-    [InlineData(true, false, true, true)]
-    [InlineData(true, true, true, true)]
-    public void RequiresStartupTask_UsesNotificationsAndSupportedStartTile(bool supportsStartTile, bool toastEnabled, bool tileEnabled, bool expected)
+    [InlineData(false, false, false, false, false)]
+    [InlineData(false, true, false, false, true)]
+    [InlineData(false, false, true, false, false)]
+    [InlineData(false, true, true, false, true)]
+    [InlineData(true, false, false, false, false)]
+    [InlineData(true, true, false, false, true)]
+    [InlineData(true, false, true, false, true)]
+    [InlineData(true, true, true, false, true)]
+    [InlineData(false, false, false, true, true)]
+    [InlineData(true, false, false, true, true)]
+    public void RequiresStartupTask_UsesNotificationsSupportedStartTileAndStartupWindow(
+        bool supportsStartTile,
+        bool toastEnabled,
+        bool tileEnabled,
+        bool openWindowAtStartup,
+        bool expected)
     {
         StartupFeaturePolicy policy = new(supportsStartTile);
         CountdownState state = new("Launch", TargetDate, tileEnabled, toastEnabled);
+        CountdownPreferences preferences = new(openWindowAtStartup: openWindowAtStartup);
 
-        Assert.Equal(expected, policy.RequiresStartupTask(state));
+        Assert.Equal(expected, policy.RequiresStartupTask(state, preferences));
     }
 
     [Fact]
@@ -40,7 +48,7 @@ public sealed class StartupFeaturePolicyTests
             toastEnabled: false);
 
         Assert.False(state.ToastEnabled);
-        Assert.True(policy.RequiresStartupTask(state));
+        Assert.True(policy.RequiresStartupTask(state, CountdownPreferences.Default));
     }
 
     [Fact]

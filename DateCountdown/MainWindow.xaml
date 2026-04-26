@@ -65,6 +65,7 @@
                 <TranslateTransform />
             </ScrollViewer.RenderTransform>
             <StackPanel
+                x:Name="MainContentPanel"
                 MaxWidth="390"
                 MinWidth="296"
                 Padding="32,36,32,40"
@@ -197,6 +198,238 @@
                                 FontSize="16"
                                 Glyph="&#xE710;" />
                         </Button>
+                        <Button
+                            x:Name="SettingsButton"
+                            Width="40"
+                            Height="40"
+                            Padding="0"
+                            AutomationProperties.AutomationId="SettingsButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="SettingsButton_Click">
+                            <Button.RenderTransform>
+                                <TranslateTransform />
+                            </Button.RenderTransform>
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="16"
+                                Glyph="&#xE713;" />
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <ScrollViewer
+            x:Name="SettingsContentScroller"
+            Grid.Row="1"
+            Canvas.ZIndex="2"
+            Padding="18,4,18,32"
+            HorizontalScrollBarVisibility="Disabled"
+            HorizontalScrollMode="Disabled"
+            VerticalScrollBarVisibility="Auto"
+            VerticalScrollMode="Auto"
+            Visibility="Collapsed">
+            <StackPanel
+                MaxWidth="640"
+                HorizontalAlignment="Stretch"
+                Spacing="28">
+                <StackPanel
+                    Spacing="16">
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            x:Name="SettingsBackButton"
+                            Width="36"
+                            Height="36"
+                            Padding="0"
+                            AutomationProperties.AutomationId="SettingsBackButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="SettingsBackButton_Click">
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="16"
+                                Glyph="&#xE72B;" />
+                        </Button>
+                        <TextBlock
+                            x:Name="SettingsTitleText"
+                            VerticalAlignment="Center"
+                            FontSize="22"
+                            FontWeight="SemiBold" />
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            x:Name="SettingsCountdownsHeaderText"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <Border
+                            Background="{ThemeResource ControlFillColorDefaultBrush}"
+                            CornerRadius="6">
+                            <Grid Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon
+                                    Grid.Column="0"
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    FontSize="18"
+                                    Glyph="&#xE8CB;" />
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="2">
+                                    <TextBlock
+                                        x:Name="SortCountdownsTitleText"
+                                        FontWeight="SemiBold" />
+                                    <TextBlock
+                                        x:Name="SortCountdownsDescriptionText"
+                                        Opacity="0.72"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    x:Name="SortCountdownsToggle"
+                                    Grid.Column="2"
+                                    Margin="16,0,0,0"
+                                    MinWidth="0"
+                                    OffContent=""
+                                    OnContent=""
+                                    Toggled="SortCountdownsToggle_Toggled" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            x:Name="SettingsAppearanceHeaderText"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <Border
+                            Background="{ThemeResource ControlFillColorDefaultBrush}"
+                            CornerRadius="6">
+                            <Grid Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon
+                                    Grid.Column="0"
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    FontSize="18"
+                                    Glyph="&#xE790;" />
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="2">
+                                    <TextBlock
+                                        x:Name="DisplaySizeTitleText"
+                                        FontWeight="SemiBold" />
+                                    <TextBlock
+                                        x:Name="DisplaySizeDescriptionText"
+                                        Opacity="0.72"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ComboBox
+                                    x:Name="DisplaySizeComboBox"
+                                    Grid.Column="2"
+                                    MinWidth="132"
+                                    Margin="16,0,0,0"
+                                    SelectionChanged="DisplaySizeComboBox_SelectionChanged">
+                                    <ComboBoxItem Tag="Compact" />
+                                    <ComboBoxItem Tag="Default" />
+                                    <ComboBoxItem Tag="Large" />
+                                </ComboBox>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            x:Name="SettingsStartupHeaderText"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <Border
+                            Background="{ThemeResource ControlFillColorDefaultBrush}"
+                            CornerRadius="6">
+                            <Grid Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon
+                                    Grid.Column="0"
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    FontSize="18"
+                                    Glyph="&#xE8FB;" />
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="2">
+                                    <TextBlock
+                                        x:Name="OpenAtStartupTitleText"
+                                        FontWeight="SemiBold" />
+                                    <TextBlock
+                                        x:Name="OpenAtStartupDescriptionText"
+                                        Opacity="0.72"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <ToggleSwitch
+                                    x:Name="OpenAtStartupToggle"
+                                    Grid.Column="2"
+                                    Margin="16,0,0,0"
+                                    MinWidth="0"
+                                    OffContent=""
+                                    OnContent=""
+                                    Toggled="OpenAtStartupToggle_Toggled" />
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            x:Name="SettingsAboutHeaderText"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <Border
+                            Background="{ThemeResource ControlFillColorDefaultBrush}"
+                            CornerRadius="6">
+                            <Grid Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Image
+                                    Grid.Column="0"
+                                    Width="20"
+                                    Height="20"
+                                    Source="Assets/Square44x44Logo.targetsize-24.png" />
+                                <StackPanel
+                                    Grid.Column="1"
+                                    Spacing="2">
+                                    <TextBlock
+                                        x:Name="AboutAppNameText"
+                                        FontWeight="SemiBold" />
+                                    <TextBlock
+                                        x:Name="AboutDescriptionText"
+                                        Opacity="0.72"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <TextBlock
+                                    x:Name="AboutVersionText"
+                                    Grid.Column="2"
+                                    Margin="16,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Opacity="0.72" />
+                            </Grid>
+                        </Border>
+                        <HyperlinkButton
+                            x:Name="SourceCodeLinkButton"
+                            Padding="0"
+                            NavigateUri="https://github.com/SpookySandwich/DateCountdown" />
                     </StackPanel>
                 </StackPanel>
             </StackPanel>

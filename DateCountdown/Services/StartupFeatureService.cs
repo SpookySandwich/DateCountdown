@@ -14,9 +14,9 @@ internal sealed class StartupFeatureService
         _startupNotificationService = startupNotificationService;
     }
 
-    public bool RequiresStartupTask(CountdownState state)
+    public bool RequiresStartupTask(CountdownState state, CountdownPreferences preferences)
     {
-        return _policy.RequiresStartupTask(state);
+        return _policy.RequiresStartupTask(state, preferences);
     }
 
     public CountdownState NormalizeState(CountdownState state)
@@ -24,15 +24,15 @@ internal sealed class StartupFeatureService
         return _policy.NormalizeState(state);
     }
 
-    public async Task<bool> EnsureAvailableForAsync(CountdownState state)
+    public async Task<bool> EnsureAvailableForAsync(CountdownState state, CountdownPreferences preferences)
     {
-        return !RequiresStartupTask(state) ||
+        return !RequiresStartupTask(state, preferences) ||
             await _startupNotificationService.EnsureStartupTaskEnabledAsync();
     }
 
-    public async Task ReconcileAsync(CountdownState state)
+    public async Task ReconcileAsync(CountdownState state, CountdownPreferences preferences)
     {
-        if (!RequiresStartupTask(state))
+        if (!RequiresStartupTask(state, preferences))
         {
             await _startupNotificationService.DisableStartupTaskAsync();
         }

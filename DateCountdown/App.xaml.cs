@@ -18,19 +18,20 @@ public partial class App : Application
     {
         if (IsStartupTaskLaunch())
         {
+            bool openWindow = false;
             try
             {
-                await new StartupTaskRunner(OperatingSystemInfo.IsWindows11OrGreater()).RunAsync();
+                openWindow = await new StartupTaskRunner(OperatingSystemInfo.IsWindows11OrGreater()).RunAsync();
             }
             catch
             {
             }
-            finally
+
+            if (!openWindow)
             {
                 Exit();
+                return;
             }
-
-            return;
         }
 
         MainWindow window = new();

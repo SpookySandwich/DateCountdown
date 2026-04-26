@@ -208,6 +208,63 @@
   <data name="ToastButton.Tooltip" xml:space="preserve">
     <value>Send notification on startup</value>
   </data>
+  <data name="SettingsButton.HelpText" xml:space="preserve">
+    <value>Open app settings for sorting, display size, and startup behavior.</value>
+  </data>
+  <data name="SettingsButton.Tooltip" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Settings.BackButton" xml:space="preserve">
+    <value>Back</value>
+  </data>
+  <data name="Settings.Title" xml:space="preserve">
+    <value>Settings</value>
+  </data>
+  <data name="Settings.CountdownsHeader" xml:space="preserve">
+    <value>Countdowns</value>
+  </data>
+  <data name="Settings.SortCountdownsTitle" xml:space="preserve">
+    <value>Sort countdowns</value>
+  </data>
+  <data name="Settings.SortCountdownsDescription" xml:space="preserve">
+    <value>Show soonest dates first.</value>
+  </data>
+  <data name="Settings.AppearanceHeader" xml:space="preserve">
+    <value>Appearance</value>
+  </data>
+  <data name="Settings.DisplaySizeTitle" xml:space="preserve">
+    <value>Display size</value>
+  </data>
+  <data name="Settings.DisplaySizeDescription" xml:space="preserve">
+    <value>Adjust the main countdown text size.</value>
+  </data>
+  <data name="Settings.DisplaySizeCompact" xml:space="preserve">
+    <value>Compact</value>
+  </data>
+  <data name="Settings.DisplaySizeDefault" xml:space="preserve">
+    <value>Default</value>
+  </data>
+  <data name="Settings.DisplaySizeLarge" xml:space="preserve">
+    <value>Large</value>
+  </data>
+  <data name="Settings.StartupHeader" xml:space="preserve">
+    <value>Startup</value>
+  </data>
+  <data name="Settings.OpenAtStartupTitle" xml:space="preserve">
+    <value>Open window at startup</value>
+  </data>
+  <data name="Settings.OpenAtStartupDescription" xml:space="preserve">
+    <value>Show Date Countdown after startup notifications and tile updates run.</value>
+  </data>
+  <data name="Settings.AboutHeader" xml:space="preserve">
+    <value>About</value>
+  </data>
+  <data name="Settings.AboutDescription" xml:space="preserve">
+    <value>Date Countdown</value>
+  </data>
+  <data name="Settings.SourceCodeLink" xml:space="preserve">
+    <value>Source code on GitHub</value>
+  </data>
   <data name="WidgetButton.HelpText" xml:space="preserve">
     <value>Show steps to pin the Date Countdown widget.</value>
   </data>

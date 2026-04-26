@@ -9,9 +9,11 @@ namespace DateCountdown.Core
             _supportsStartTile = supportsStartTile;
         }
 
-        public bool RequiresStartupTask(CountdownState state)
+        public bool RequiresStartupTask(CountdownState state, CountdownPreferences preferences)
         {
-            return state.AnyToastEnabled || (_supportsStartTile && state.TileEnabled);
+            return preferences.OpenWindowAtStartup ||
+                state.AnyToastEnabled ||
+                (_supportsStartTile && state.TileEnabled);
         }
 
         public CountdownState NormalizeState(CountdownState state)

@@ -46,6 +46,21 @@ internal sealed class CountdownSettingsStore
         _localSettings.Values[CountdownSettingsKeys.ToastEnabled] = state.AnyToastEnabled;
     }
 
+    public CountdownPreferences LoadPreferences()
+    {
+        return new CountdownPreferences(
+            ReadBool(CountdownSettingsKeys.SortCountdownsByDaysLeft),
+            CountdownPreferences.ParseDisplaySize(_localSettings.Values[CountdownSettingsKeys.DisplaySize]),
+            ReadBool(CountdownSettingsKeys.OpenWindowAtStartup));
+    }
+
+    public void SavePreferences(CountdownPreferences preferences)
+    {
+        _localSettings.Values[CountdownSettingsKeys.SortCountdownsByDaysLeft] = preferences.SortCountdownsByDaysLeft;
+        _localSettings.Values[CountdownSettingsKeys.DisplaySize] = preferences.DisplaySize.ToString();
+        _localSettings.Values[CountdownSettingsKeys.OpenWindowAtStartup] = preferences.OpenWindowAtStartup;
+    }
+
     private bool ReadBool(string key)
     {
         return _localSettings.Values[key] is bool value && value;
