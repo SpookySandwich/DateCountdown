@@ -29,7 +29,8 @@
   </Dependencies>
 
   <Resources>
-    <Resource Language="x-generate"/>
+    <Resource Language="en-US"/>
+    <Resource Language="zh-CN"/>
   </Resources>
 
   <Applications>
@@ -51,7 +52,7 @@
         <uap3:Extension Category="windows.appExtension">
           <uap3:AppExtension
             Name="com.microsoft.windows.widgets"
-            DisplayName="Date Countdown"
+            DisplayName="ms-resource:AppName"
             Id="DateCountdownWidgetProvider"
             PublicFolder="Assets">
             <uap3:Properties>
@@ -68,8 +69,8 @@
                 <Definitions>
                   <Definition
                     Id="DateCountdown_Widget"
-                    DisplayName="Date Countdown"
-                    Description="Show your saved countdown from Date Countdown."
+                    DisplayName="ms-resource:AppName"
+                    Description="ms-resource:WidgetDescription"
                     AllowMultiple="false">
                     <Capabilities>
                       <Capability>
@@ -87,7 +88,7 @@
                         <Icon Path="Assets\Square44x44Logo.scale-200.png" />
                       </Icons>
                       <Screenshots>
-                        <Screenshot Path="Assets\WidgetPreview.scale-200.png" DisplayAltText="Date Countdown widget preview" />
+                        <Screenshot Path="Assets\WidgetPreview.scale-200.png" DisplayAltText="ms-resource:WidgetPreviewAltText" />
                       </Screenshots>
                       <DarkMode />
                       <LightMode />
@@ -102,12 +103,12 @@
           <uap5:StartupTask
             TaskId="DateCountdownStartupId"
             Enabled="false"
-            DisplayName="Date Countdown" />
+            DisplayName="ms-resource:AppName" />
         </uap5:Extension>
       </Extensions>
       <uap:VisualElements
         DisplayName="ms-resource:AppName"
-        Description="Date Countdown"
+        Description="ms-resource:AppDescription"
         BackgroundColor="transparent"
         Square150x150Logo="Assets\Square150x150Logo.png"
         Square44x44Logo="Assets\Square44x44Logo.png">

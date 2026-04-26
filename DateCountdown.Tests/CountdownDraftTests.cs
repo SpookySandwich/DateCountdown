@@ -16,6 +16,14 @@ public sealed class CountdownDraftTests
         Assert.Equal(string.Empty, draft.Title);
     }
 
+    [Fact]
+    public void Constructor_NormalizesTitle()
+    {
+        CountdownDraft draft = new("  Launch  ", Now, tileEnabled: false, toastEnabled: false);
+
+        Assert.Equal("Launch", draft.Title);
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("")]
@@ -107,5 +115,18 @@ public sealed class CountdownDraftTests
         Assert.Equal(Now.AddDays(3), updatedState.TargetDate);
         Assert.True(updatedState.TileEnabled);
         Assert.True(updatedState.ToastEnabled);
+    }
+
+    [Fact]
+    public void TryApplyTo_CommitsNormalizedTitle()
+    {
+        CountdownState state = new("Original", Now.AddDays(1), tileEnabled: false, toastEnabled: false);
+        CountdownDraft draft = new("  Updated  ", Now.AddDays(2), tileEnabled: false, toastEnabled: false);
+
+        bool committed = draft.TryApplyTo(state, Now, out CountdownState? updatedState);
+
+        Assert.True(committed);
+        Assert.NotNull(updatedState);
+        Assert.Equal("Updated", updatedState.Title);
     }
 }

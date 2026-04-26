@@ -6,10 +6,11 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-    <Grid Background="Transparent">
+    <Grid
+        x:Name="RootGrid"
+        Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="32" />
-            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -20,9 +21,16 @@
         <Grid
             x:Name="CountdownSelectorFrame"
             Grid.Row="1"
+            Canvas.ZIndex="1"
             Margin="32,8,32,0"
             HorizontalAlignment="Stretch"
+            VerticalAlignment="Top"
             Visibility="Collapsed">
+            <Grid.Transitions>
+                <TransitionCollection>
+                    <RepositionThemeTransition />
+                </TransitionCollection>
+            </Grid.Transitions>
             <ScrollViewer
                 x:Name="CountdownSelectorRail"
                 HorizontalAlignment="Stretch"
@@ -47,11 +55,15 @@
         </Grid>
 
         <ScrollViewer
-            Grid.Row="2"
+            x:Name="MainContentScroller"
+            Grid.Row="1"
             HorizontalScrollBarVisibility="Disabled"
             HorizontalScrollMode="Disabled"
             VerticalScrollBarVisibility="Auto"
             VerticalScrollMode="Auto">
+            <ScrollViewer.RenderTransform>
+                <TranslateTransform />
+            </ScrollViewer.RenderTransform>
             <StackPanel
                 MaxWidth="390"
                 MinWidth="296"
@@ -121,6 +133,9 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Click="NotifyButton_Click">
+                            <Button.RenderTransform>
+                                <TranslateTransform />
+                            </Button.RenderTransform>
                             <FontIcon
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                 FontSize="16"
@@ -135,6 +150,9 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Click="TileButton_Click">
+                            <Button.RenderTransform>
+                                <TranslateTransform />
+                            </Button.RenderTransform>
                             <FontIcon
                                 x:Name="GlanceSurfaceIcon"
                                 FontFamily="Segoe MDL2 Assets"
@@ -145,11 +163,18 @@
                             x:Name="DeleteButton"
                             Width="40"
                             Height="40"
+                            Opacity="0"
                             Padding="0"
                             AutomationProperties.AutomationId="DeleteCountdownButton"
                             Background="Transparent"
                             BorderThickness="0"
-                            Click="DeleteButton_Click">
+                            Click="DeleteButton_Click"
+                            IsHitTestVisible="False"
+                            IsTabStop="False"
+                            Visibility="Collapsed">
+                            <Button.RenderTransform>
+                                <TranslateTransform />
+                            </Button.RenderTransform>
                             <FontIcon
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                 FontSize="16"
@@ -164,6 +189,9 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Click="AddButton_Click">
+                            <Button.RenderTransform>
+                                <TranslateTransform />
+                            </Button.RenderTransform>
                             <FontIcon
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                 FontSize="16"

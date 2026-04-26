@@ -120,6 +120,9 @@
   <data name="AppName" xml:space="preserve">
     <value>Date Countdown</value>
   </data>
+  <data name="AppDescription" xml:space="preserve">
+    <value>Track saved countdowns for important dates.</value>
+  </data>
   <data name="AppTile" xml:space="preserve">
     <value>Countdown</value>
   </data>
@@ -145,10 +148,10 @@
     <value>Countdown {0}</value>
   </data>
   <data name="CreateStartupTaskFailedNotification.Content" xml:space="preserve">
-    <value>Please enable startup item at Task Manager manually</value>
+    <value>Enable Date Countdown in Startup apps, then try again.</value>
   </data>
   <data name="CreateStartupTaskFailedNotification.Title" xml:space="preserve">
-    <value>Cannot send notification at startup</value>
+    <value>Startup permission needed</value>
   </data>
   <data name="DaysLeft.Text" xml:space="preserve">
     <value>{0:days} days left</value>
@@ -167,13 +170,19 @@
     <value>Date</value>
   </data>
   <data name="TileButton.HelpText" xml:space="preserve">
-    <value>Toggle Start tile updates. Changes are saved immediately.</value>
+    <value>Add or remove the countdown from the Windows Start tile. Changes are saved immediately.</value>
+  </data>
+  <data name="TileButton.DisableTooltip" xml:space="preserve">
+    <value>Stop updating Start tile</value>
+  </data>
+  <data name="TileButton.EnableTooltip" xml:space="preserve">
+    <value>Add to Start tile</value>
   </data>
   <data name="TileButton.Content" xml:space="preserve">
     <value>Start tile</value>
   </data>
   <data name="TileButton.Tooltip" xml:space="preserve">
-    <value>Show countdown on Start tile</value>
+    <value>Add to Start tile</value>
   </data>
   <data name="Title.Header" xml:space="preserve">
     <value>Title</value>
@@ -182,28 +191,31 @@
     <value>Type a title</value>
   </data>
   <data name="ToastButton.HelpText" xml:space="preserve">
-    <value>Toggle startup notifications. Changes are saved immediately.</value>
+    <value>Toggle send notification on startup. Changes are saved immediately.</value>
   </data>
   <data name="ToastButton.Content" xml:space="preserve">
-    <value>Startup notification</value>
+    <value>Send notification on startup</value>
   </data>
   <data name="ToastButton.DisabledSavedContentFormat" xml:space="preserve">
-    <value>{0} will not send a startup notification.</value>
+    <value>Startup notifications are off for {0}.</value>
   </data>
   <data name="ToastButton.EnabledSavedContentFormat" xml:space="preserve">
-    <value>{0} will send a startup notification.</value>
+    <value>Startup notifications are on for {0}.</value>
   </data>
   <data name="ToastButton.SavedTitle" xml:space="preserve">
-    <value>Notification setting saved</value>
+    <value>Send notification on startup</value>
   </data>
   <data name="ToastButton.Tooltip" xml:space="preserve">
-    <value>Send notification at startup</value>
+    <value>Send notification on startup</value>
   </data>
   <data name="WidgetButton.HelpText" xml:space="preserve">
     <value>Show steps to pin the Date Countdown widget.</value>
   </data>
   <data name="WidgetButton.Tooltip" xml:space="preserve">
     <value>Pin widget</value>
+  </data>
+  <data name="WidgetDescription" xml:space="preserve">
+    <value>Show your saved countdowns from Date Countdown.</value>
   </data>
   <data name="WidgetFlyout.OkButton" xml:space="preserve">
     <value>OK</value>
@@ -212,12 +224,15 @@
     <value>Select +, then choose Date Countdown.</value>
   </data>
   <data name="WidgetFlyout.StepOpen" xml:space="preserve">
-    <value>Open Widgets from the taskbar or press Win+W.</value>
+    <value>Open Widgets from the taskbar.</value>
   </data>
   <data name="WidgetFlyout.StepPin" xml:space="preserve">
     <value>Select Pin.</value>
   </data>
   <data name="WidgetFlyout.Title" xml:space="preserve">
     <value>Pin widget</value>
+  </data>
+  <data name="WidgetPreviewAltText" xml:space="preserve">
+    <value>Date Countdown widget preview</value>
   </data>
 </root>

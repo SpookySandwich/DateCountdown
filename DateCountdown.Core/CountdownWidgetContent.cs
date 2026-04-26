@@ -132,7 +132,7 @@ namespace DateCountdown.Core
         {
             CountdownItem selectedCountdown = state.SelectedCountdown;
             int daysLeft = CountdownLogic.CalculateDaysLeft(selectedCountdown.TargetDate, now);
-            string displayTitle = GetDisplayTitle(selectedCountdown.Title, displayText);
+            string displayTitle = displayText.FormatTitle(selectedCountdown.Title);
             string targetDateText = selectedCountdown.TargetDate.Date.ToString("d", CultureInfo.CurrentCulture);
             IReadOnlyList<CountdownItem> listItems = GetListItems(state, size);
 
@@ -149,7 +149,7 @@ namespace DateCountdown.Core
                 builder.Append(",\"item");
                 builder.Append(i.ToString(CultureInfo.InvariantCulture));
                 builder.Append("Title\":\"");
-                builder.Append(JsonEscape(GetDisplayTitle(item.Title, displayText)));
+                builder.Append(JsonEscape(displayText.FormatTitle(item.Title)));
                 builder.Append("\",\"item");
                 builder.Append(i.ToString(CultureInfo.InvariantCulture));
                 builder.Append("DaysText\":\"");
@@ -242,11 +242,6 @@ namespace DateCountdown.Core
                 .OrderBy(item => item.TargetDate.Date)
                 .Take(maxListItems)
                 .ToList();
-        }
-
-        private static string GetDisplayTitle(string title, CountdownDisplayText displayText)
-        {
-            return string.IsNullOrWhiteSpace(title) ? displayText.DefaultTitle : title;
         }
 
         private static string JsonEscape(string value)

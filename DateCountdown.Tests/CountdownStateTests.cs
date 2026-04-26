@@ -158,6 +158,33 @@ public sealed class CountdownStateTests
     }
 
     [Fact]
+    public void AddCountdown_IgnoresNullCountdown()
+    {
+        CountdownState state = new("First", DateTimeOffset.UnixEpoch, tileEnabled: false, toastEnabled: false);
+
+        CountdownState updated = state.AddCountdown(null, selectCountdown: true);
+
+        Assert.Same(state, updated);
+    }
+
+    [Fact]
+    public void MultiItemConstructor_IgnoresNullCountdowns()
+    {
+        CountdownState state = new CountdownState(
+            new CountdownItem?[]
+            {
+                null,
+                new CountdownItem("first", "First", DateTimeOffset.UnixEpoch)
+            },
+            selectedCountdownId: "first",
+            tileEnabled: false,
+            toastEnabled: false);
+
+        Assert.Single(state.Countdowns);
+        Assert.Equal("first", state.SelectedCountdownId);
+    }
+
+    [Fact]
     public void SelectCountdown_ChangesSelectedCountdownWhenIdExists()
     {
         CountdownState state = new CountdownState(

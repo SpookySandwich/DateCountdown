@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Text.Json;
 
 namespace DateCountdown.Core
@@ -12,11 +13,21 @@ namespace DateCountdown.Core
             WriteIndented = false
         };
 
-        public static string SerializeCountdowns(IEnumerable<CountdownItem> countdowns)
+        public static string SerializeCountdowns(IEnumerable<CountdownItem?>? countdowns)
         {
             List<StoredCountdownItem> storedItems = new List<StoredCountdownItem>();
-            foreach (CountdownItem countdown in countdowns)
+            if (countdowns is null)
             {
+                return JsonSerializer.Serialize(storedItems, SerializerOptions);
+            }
+
+            foreach (CountdownItem? countdown in countdowns)
+            {
+                if (countdown is null)
+                {
+                    continue;
+                }
+
                 storedItems.Add(new StoredCountdownItem
                 {
                     Id = countdown.Id,
@@ -38,22 +49,18 @@ namespace DateCountdown.Core
 
             try
             {
-                List<StoredCountdownItem>? storedItems = JsonSerializer.Deserialize<List<StoredCountdownItem>>(value, SerializerOptions);
-                if (storedItems is null)
+                using JsonDocument document = JsonDocument.Parse(value);
+                if (document.RootElement.ValueKind != JsonValueKind.Array)
                 {
                     return Array.Empty<CountdownItem>();
                 }
 
                 List<CountdownItem> countdowns = new List<CountdownItem>();
-                foreach (StoredCountdownItem storedItem in storedItems)
+                foreach (JsonElement storedItem in document.RootElement.EnumerateArray())
                 {
-                    if (!string.IsNullOrWhiteSpace(storedItem.Id))
+                    if (TryReadCountdown(storedItem, out CountdownItem? countdown) && countdown is not null)
                     {
-                        countdowns.Add(new CountdownItem(
-                            storedItem.Id,
-                            storedItem.Title,
-                            storedItem.TargetDate,
-                            storedItem.ToastEnabled));
+                        countdowns.Add(countdown);
                     }
                 }
 
@@ -63,6 +70,80 @@ namespace DateCountdown.Core
             {
                 return Array.Empty<CountdownItem>();
             }
+            catch (ArgumentException)
+            {
+                return Array.Empty<CountdownItem>();
+            }
+        }
+
+        private static bool TryReadCountdown(JsonElement storedItem, out CountdownItem? countdown)
+        {
+            countdown = null;
+            if (storedItem.ValueKind != JsonValueKind.Object)
+            {
+                return false;
+            }
+
+            string? id = TryGetString(storedItem, "id");
+            if (string.IsNullOrWhiteSpace(id))
+            {
+                return false;
+            }
+
+            if (!TryGetDateTimeOffset(storedItem, "targetDate", out DateTimeOffset targetDate) ||
+                targetDate == default)
+            {
+                return false;
+            }
+
+            countdown = new CountdownItem(
+                id,
+                TryGetString(storedItem, "title"),
+                targetDate,
+                TryGetBool(storedItem, "toastEnabled"));
+            return true;
+        }
+
+        private static string? TryGetString(JsonElement element, string propertyName)
+        {
+            if (!element.TryGetProperty(propertyName, out JsonElement property) ||
+                property.ValueKind != JsonValueKind.String)
+            {
+                return null;
+            }
+
+            return property.GetString();
+        }
+
+        private static bool TryGetBool(JsonElement element, string propertyName)
+        {
+            return element.TryGetProperty(propertyName, out JsonElement property) &&
+                (property.ValueKind switch
+                {
+                    JsonValueKind.True => true,
+                    _ => false
+                });
+        }
+
+        private static bool TryGetDateTimeOffset(JsonElement element, string propertyName, out DateTimeOffset value)
+        {
+            value = default;
+            if (!element.TryGetProperty(propertyName, out JsonElement property))
+            {
+                return false;
+            }
+
+            if (property.ValueKind == JsonValueKind.String)
+            {
+                return property.TryGetDateTimeOffset(out value) ||
+                    DateTimeOffset.TryParse(
+                        property.GetString(),
+                        CultureInfo.InvariantCulture,
+                        DateTimeStyles.AssumeLocal,
+                        out value);
+            }
+
+            return false;
         }
 
         private sealed class StoredCountdownItem

@@ -15,21 +15,11 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Assets\SplashScreen.scale-200.png" />
-    <Content Include="Assets\LockScreenLogo.scale-200.png" />
-    <Content Include="Assets\Square150x150Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.scale-200.png" />
-    <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Content Include="Assets\StoreLogo.png" />
-    <Content Include="Assets\SmallTile.scale-200.png" />
-    <Content Include="Assets\LargeTile.scale-200.png" />
-    <Content Include="Assets\AppIcon.ico" />
-    <Content Include="Assets\Wide310x150Logo.scale-200.png" />
-    <Content Include="Assets\WidgetPreview.scale-200.png" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Update="Assets\*">
+    <Content Remove="Assets\Win10StyleBackup\**" />
+    <None Remove="Assets\Win10StyleBackup\**" />
+    <Content Remove="Assets\*.backup.*" />
+    <None Remove="Assets\*.backup.*" />
+    <Content Include="Assets\*.png;Assets\*.ico" Exclude="Assets\*.backup.*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -44,7 +34,7 @@
     package has not yet been restored.
   -->
   <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
-    <ProjectCapability Include="Msix"/>
+    <ProjectCapability Include="Msix" />
   </ItemGroup>
 
   <ItemGroup>
@@ -71,7 +61,7 @@
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
     <PublishTrimmed Condition="'$(Configuration)' == 'Debug'">False</PublishTrimmed>
-    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">True</PublishTrimmed>
+    <PublishTrimmed Condition="'$(Configuration)' != 'Debug'">False</PublishTrimmed>
   </PropertyGroup>
 
   <Target Name="CopyWidgetProviderOutput" AfterTargets="Build">
@@ -81,11 +71,7 @@
     <ItemGroup>
       <WidgetProviderOutputFiles Include="$(WidgetProviderOutput)**\*.*" />
     </ItemGroup>
-    <Copy
-      SourceFiles="@(WidgetProviderOutputFiles)"
-      DestinationFiles="@(WidgetProviderOutputFiles->'$(OutDir)DateCountdown.WidgetProvider\%(RecursiveDir)%(Filename)%(Extension)')"
-      SkipUnchangedFiles="true"
-      Condition="'@(WidgetProviderOutputFiles)' != ''" />
+    <Copy SourceFiles="@(WidgetProviderOutputFiles)" DestinationFiles="@(WidgetProviderOutputFiles->'$(OutDir)DateCountdown.WidgetProvider\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" Condition="'@(WidgetProviderOutputFiles)' != ''" />
   </Target>
 
   <Target Name="AddWidgetProviderPackagePayload" BeforeTargets="_ComputeAppxPackagePayload" DependsOnTargets="CopyWidgetProviderOutput">

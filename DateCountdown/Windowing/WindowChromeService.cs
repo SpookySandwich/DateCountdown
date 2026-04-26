@@ -18,16 +18,23 @@ internal sealed class WindowChromeService
 
     private SubclassProc? _minimumWindowSizeProc;
 
-    public void Initialize(Window window, UIElement titleBar, string title, bool useMica)
+    public void Initialize(Window window, UIElement titleBar, string title, bool isWindows11OrGreater)
     {
         window.ExtendsContentIntoTitleBar = true;
         window.SetTitleBar(titleBar);
         window.Title = title;
-        window.SystemBackdrop = useMica ? new MicaBackdrop() : new DesktopAcrylicBackdrop();
+        window.SystemBackdrop = CreateSystemBackdrop(isWindows11OrGreater);
 
         InstallMinimumWindowSizeHook(window);
         SetDefaultWindowSize(window);
         window.AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "AppIcon.ico"));
+    }
+
+    private static SystemBackdrop CreateSystemBackdrop(bool isWindows11OrGreater)
+    {
+        return isWindows11OrGreater
+            ? new MicaBackdrop()
+            : new DesktopAcrylicBackdrop();
     }
 
     [DllImport("user32.dll")]

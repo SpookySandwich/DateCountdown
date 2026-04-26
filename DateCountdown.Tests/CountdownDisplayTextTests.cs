@@ -37,4 +37,31 @@ public sealed class CountdownDisplayTextTests
 
         Assert.Equal("1,234", displayText.FormatDaysLeft(1234, CultureInfo.GetCultureInfo("en-US")));
     }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("")]
+    [InlineData("   ")]
+    public void FormatTitle_UsesDefaultForMissingTitle(string? title)
+    {
+        CountdownDisplayText displayText = new("Countdown", "{0} day", "{0} days");
+
+        Assert.Equal("Countdown", displayText.FormatTitle(title));
+    }
+
+    [Fact]
+    public void FormatTitle_NormalizesProvidedTitle()
+    {
+        CountdownDisplayText displayText = new("Countdown", "{0} day", "{0} days");
+
+        Assert.Equal("Launch", displayText.FormatTitle("  Launch  "));
+    }
+
+    [Fact]
+    public void FormatDaysLeft_UsesFallbackWhenLocalizedFormatIsMalformed()
+    {
+        CountdownDisplayText displayText = new("Countdown", "{0 day", "{0 days");
+
+        Assert.Equal("2 days left", displayText.FormatDaysLeft(2, CultureInfo.InvariantCulture));
+    }
 }

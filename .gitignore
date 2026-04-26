@@ -7,3 +7,20 @@ obj/
 *.suo
 *.userosscache
 *.sln.docstates
+
+# Local package/build artifacts
+**/AppPackages/
+**/BundleArtifacts/
+artifacts/
+TestResults/
+*.appx
+*.appxbundle
+*.msix
+*.msixbundle
+*.msixupload
+*.cer
+*.pfx
+
+# Temporary design backups
+DateCountdown/Assets/Win10StyleBackup/
+DateCountdown/Assets/*.backup.*

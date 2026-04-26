@@ -8,8 +8,10 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Animation;
 using Microsoft.Windows.ApplicationModel.Resources;
 using System;
+using System.Collections.Generic;
 using System.Globalization;
 using System.Threading.Tasks;
 using Windows.Foundation;
@@ -21,7 +23,10 @@ public sealed partial class MainWindow : Window
 {
     private const string TileGlyph = "\uECA5";
     private const string WidgetAddGlyph = "\uF036";
+    private const double MainContentNavigationOffset = 34;
+    private static readonly Duration VisibilityMotionDuration = new(TimeSpan.FromMilliseconds(167));
 
+    private readonly bool _animationsEnabled = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
     private readonly bool _isWindows11OrGreater = OperatingSystemInfo.IsWindows11OrGreater();
     private readonly CountdownSettingsStore _settingsStore = new();
     private readonly ResourceLoader _resourceLoader = new();
@@ -37,8 +42,12 @@ public sealed partial class MainWindow : Window
     private double _countdownSelectorDragStartX;
     private bool _didDragCountdownSelector;
     private bool _isDraggingCountdownSelector;
+    private bool _isMotionReady;
     private bool _isUpdatingControls;
     private DateTimeOffset _lastCountdownSelectorDragAt = DateTimeOffset.MinValue;
+    private Storyboard? _mainContentOffsetStoryboard;
+    private Storyboard? _countdownSelectorVisibilityStoryboard;
+    private Storyboard? _toolbarPositionStoryboard;
     private Flyout? _widgetHelpFlyout;
 
     public MainWindow()
@@ -53,28 +62,9 @@ public sealed partial class MainWindow : Window
 
         LoadState();
         SetDisplay();
+        _isMotionReady = true;
         SyncWidgets();
         _ = ReconcileStartupTaskAsync();
-    }
-
-    internal async Task DoStartupTaskAsync()
-    {
-        LoadState();
-        _dateDifference = CountdownLogic.CalculateDaysLeft(_state.TargetDate, DateTimeOffset.Now);
-
-        foreach (CountdownItem countdown in _state.Countdowns)
-        {
-            if (countdown.ToastEnabled)
-            {
-                string daysLeft = FormatDaysLeft(CountdownLogic.CalculateDaysLeft(countdown.TargetDate, DateTimeOffset.Now));
-                _startupNotificationService.ShowToast(daysLeft, countdown.Title);
-            }
-        }
-
-        if (_state.TileEnabled && !_isWindows11OrGreater)
-        {
-            await _startMenuService.UpdateLiveTileAsync(FormatDaysLeft(_dateDifference), _state.Title);
-        }
     }
 
     private string GetString(string key)
@@ -143,6 +133,7 @@ public sealed partial class MainWindow : Window
         UpdateCountdownPreview();
         UpdateCountdownSelector();
         TextBoxTitle.PlaceholderText = GetString("Title/PlaceholderText");
+        TextBoxTitle.MaxLength = CountdownItem.MaxTitleLength;
         TextBoxTitle.Text = _state.Title;
         DatePickerTargetDate.MinDate = DateTimeOffset.Now.Date;
         DatePickerTargetDate.Date = _state.TargetDate;
@@ -179,7 +170,7 @@ public sealed partial class MainWindow : Window
         NotifyButton.IsEnabled = _state.ToastEnabled || canCommitDraft;
         TileButton.IsEnabled = _isWindows11OrGreater || _state.TileEnabled || canCommitDraft;
         AddButton.IsEnabled = true;
-        DeleteButton.IsEnabled = _state.CanRemoveCountdown;
+        SetDeleteButtonVisible(_state.CanRemoveCountdown);
         NotifyButton.Foreground = GetToggleBrush(_state.ToastEnabled);
         UpdateGlanceSurfaceStatus();
     }
@@ -190,14 +181,14 @@ public sealed partial class MainWindow : Window
         _isUpdatingControls = true;
         try
         {
-            CountdownSelectorFrame.Visibility = _state.Countdowns.Count > 1 ? Visibility.Visible : Visibility.Collapsed;
-            CountdownSelectorItems.Children.Clear();
-            UpdateCountdownSelectorContentWidth();
-
             if (_state.Countdowns.Count <= 1)
             {
+                SetCountdownSelectorVisible(false, clearAfterHide: true);
                 return;
             }
+
+            CountdownSelectorItems.Children.Clear();
+            UpdateCountdownSelectorContentWidth();
 
             for (int i = 0; i < _state.Countdowns.Count; i++)
             {
@@ -211,11 +202,305 @@ public sealed partial class MainWindow : Window
                     BringSelectedCountdownIntoView();
                 }
             }
+
+            SetCountdownSelectorVisible(true);
         }
         finally
         {
             _isUpdatingControls = wasUpdatingControls;
         }
+    }
+
+    private void SetCountdownSelectorVisible(bool isVisible, bool clearAfterHide = false)
+    {
+        _countdownSelectorVisibilityStoryboard?.Stop();
+        AnimateMainContentNavigationOffset(isVisible);
+
+        if (!_isMotionReady || !_animationsEnabled)
+        {
+            CountdownSelectorFrame.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+            CountdownSelectorFrame.Opacity = isVisible ? 1 : 0;
+            if (!isVisible && clearAfterHide)
+            {
+                CountdownSelectorItems.Children.Clear();
+            }
+
+            return;
+        }
+
+        if (isVisible)
+        {
+            if (CountdownSelectorFrame.Visibility == Visibility.Visible && CountdownSelectorFrame.Opacity >= 1)
+            {
+                return;
+            }
+
+            CountdownSelectorFrame.Visibility = Visibility.Visible;
+            CountdownSelectorFrame.Opacity = 0;
+            Storyboard storyboard = CreateOpacityStoryboard(CountdownSelectorFrame, 1);
+            _countdownSelectorVisibilityStoryboard = storyboard;
+            storyboard.Completed += (_, _) =>
+            {
+                if (ReferenceEquals(_countdownSelectorVisibilityStoryboard, storyboard))
+                {
+                    _countdownSelectorVisibilityStoryboard = null;
+                    CountdownSelectorFrame.Opacity = 1;
+                }
+            };
+            storyboard.Begin();
+            return;
+        }
+
+        if (CountdownSelectorFrame.Visibility != Visibility.Visible)
+        {
+            if (clearAfterHide)
+            {
+                CountdownSelectorItems.Children.Clear();
+            }
+
+            return;
+        }
+
+        Storyboard hideStoryboard = CreateOpacityStoryboard(CountdownSelectorFrame, 0);
+        _countdownSelectorVisibilityStoryboard = hideStoryboard;
+        hideStoryboard.Completed += (_, _) =>
+        {
+            if (ReferenceEquals(_countdownSelectorVisibilityStoryboard, hideStoryboard))
+            {
+                _countdownSelectorVisibilityStoryboard = null;
+                CountdownSelectorFrame.Visibility = Visibility.Collapsed;
+                CountdownSelectorFrame.Opacity = 0;
+                if (clearAfterHide)
+                {
+                    CountdownSelectorItems.Children.Clear();
+                }
+            }
+        };
+        hideStoryboard.Begin();
+    }
+
+    private void HideCountdownSelectorImmediately(bool clearItems)
+    {
+        _countdownSelectorVisibilityStoryboard?.Stop();
+        _countdownSelectorVisibilityStoryboard = null;
+        _mainContentOffsetStoryboard?.Stop();
+        _mainContentOffsetStoryboard = null;
+        CountdownSelectorFrame.Visibility = Visibility.Collapsed;
+        CountdownSelectorFrame.Opacity = 0;
+        EnsureMainContentTranslateTransform().Y = 0;
+        if (clearItems)
+        {
+            CountdownSelectorItems.Children.Clear();
+        }
+    }
+
+    private void AnimateMainContentNavigationOffset(bool isSelectorVisible)
+    {
+        double targetOffset = isSelectorVisible ? MainContentNavigationOffset : 0;
+        TranslateTransform transform = EnsureMainContentTranslateTransform();
+
+        _mainContentOffsetStoryboard?.Stop();
+        _mainContentOffsetStoryboard = null;
+
+        if (!_isMotionReady || !_animationsEnabled)
+        {
+            transform.Y = targetOffset;
+            return;
+        }
+
+        if (Math.Abs(transform.Y - targetOffset) < 0.5)
+        {
+            transform.Y = targetOffset;
+            return;
+        }
+
+        DoubleAnimation animation = new()
+        {
+            From = transform.Y,
+            To = targetOffset,
+            Duration = VisibilityMotionDuration,
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+            EnableDependentAnimation = true
+        };
+        Storyboard.SetTarget(animation, transform);
+        Storyboard.SetTargetProperty(animation, nameof(TranslateTransform.Y));
+
+        Storyboard storyboard = new();
+        storyboard.Children.Add(animation);
+        _mainContentOffsetStoryboard = storyboard;
+        storyboard.Completed += (_, _) =>
+        {
+            if (ReferenceEquals(_mainContentOffsetStoryboard, storyboard))
+            {
+                _mainContentOffsetStoryboard = null;
+                transform.Y = targetOffset;
+            }
+        };
+        storyboard.Begin();
+    }
+
+    private TranslateTransform EnsureMainContentTranslateTransform()
+    {
+        if (MainContentScroller.RenderTransform is TranslateTransform transform)
+        {
+            return transform;
+        }
+
+        TranslateTransform newTransform = new();
+        MainContentScroller.RenderTransform = newTransform;
+        return newTransform;
+    }
+
+    private void SetDeleteButtonVisible(bool isVisible)
+    {
+        bool wasVisible = DeleteButton.Visibility == Visibility.Visible;
+        if (wasVisible == isVisible)
+        {
+            DeleteButton.Opacity = 1;
+            DeleteButton.IsEnabled = isVisible;
+            DeleteButton.IsHitTestVisible = isVisible;
+            DeleteButton.IsTabStop = isVisible;
+            return;
+        }
+
+        Dictionary<Button, double> previousCenters = CaptureToolbarButtonCenters();
+
+        DeleteButton.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
+        DeleteButton.Opacity = 1;
+        DeleteButton.IsEnabled = isVisible;
+        DeleteButton.IsHitTestVisible = isVisible;
+        DeleteButton.IsTabStop = isVisible;
+        RootGrid.UpdateLayout();
+        AnimateToolbarButtonPositions(previousCenters);
+    }
+
+    private Dictionary<Button, double> CaptureToolbarButtonCenters()
+    {
+        Dictionary<Button, double> centers = new();
+        if (!_isMotionReady || !_animationsEnabled)
+        {
+            return centers;
+        }
+
+        _toolbarPositionStoryboard?.Stop();
+        _toolbarPositionStoryboard = null;
+        foreach (Button button in GetToolbarButtons())
+        {
+            EnsureButtonTranslateTransform(button).X = 0;
+        }
+
+        RootGrid.UpdateLayout();
+        foreach (Button button in GetToolbarButtons())
+        {
+            if (button.Visibility != Visibility.Visible || button.ActualWidth <= 0)
+            {
+                continue;
+            }
+
+            Point position = button.TransformToVisual(RootGrid).TransformPoint(new Point(0, 0));
+            centers[button] = position.X + (button.ActualWidth / 2);
+        }
+
+        return centers;
+    }
+
+    private void AnimateToolbarButtonPositions(IReadOnlyDictionary<Button, double> previousCenters)
+    {
+        if (!_isMotionReady || !_animationsEnabled || previousCenters.Count == 0)
+        {
+            ResetToolbarButtonTransforms();
+            return;
+        }
+
+        Storyboard storyboard = new();
+        foreach (Button button in GetToolbarButtons())
+        {
+            if (button.Visibility != Visibility.Visible || !previousCenters.TryGetValue(button, out double previousCenter))
+            {
+                continue;
+            }
+
+            Point position = button.TransformToVisual(RootGrid).TransformPoint(new Point(0, 0));
+            double currentCenter = position.X + (button.ActualWidth / 2);
+            double offset = previousCenter - currentCenter;
+            if (Math.Abs(offset) < 0.5)
+            {
+                continue;
+            }
+
+            TranslateTransform transform = EnsureButtonTranslateTransform(button);
+            transform.X = offset;
+
+            DoubleAnimation animation = new()
+            {
+                From = offset,
+                To = 0,
+                Duration = VisibilityMotionDuration,
+                EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut },
+                EnableDependentAnimation = true
+            };
+            Storyboard.SetTarget(animation, transform);
+            Storyboard.SetTargetProperty(animation, nameof(TranslateTransform.X));
+            storyboard.Children.Add(animation);
+        }
+
+        if (storyboard.Children.Count == 0)
+        {
+            ResetToolbarButtonTransforms();
+            return;
+        }
+
+        _toolbarPositionStoryboard = storyboard;
+        storyboard.Completed += (_, _) =>
+        {
+            if (ReferenceEquals(_toolbarPositionStoryboard, storyboard))
+            {
+                _toolbarPositionStoryboard = null;
+                ResetToolbarButtonTransforms();
+            }
+        };
+        storyboard.Begin();
+    }
+
+    private void ResetToolbarButtonTransforms()
+    {
+        foreach (Button button in GetToolbarButtons())
+        {
+            EnsureButtonTranslateTransform(button).X = 0;
+        }
+    }
+
+    private IReadOnlyList<Button> GetToolbarButtons()
+    {
+        return new[] { NotifyButton, TileButton, DeleteButton, AddButton };
+    }
+
+    private static TranslateTransform EnsureButtonTranslateTransform(Button button)
+    {
+        if (button.RenderTransform is TranslateTransform transform)
+        {
+            return transform;
+        }
+
+        TranslateTransform newTransform = new();
+        button.RenderTransform = newTransform;
+        return newTransform;
+    }
+
+    private static Storyboard CreateOpacityStoryboard(UIElement element, double to)
+    {
+        DoubleAnimation animation = new()
+        {
+            To = to,
+            Duration = VisibilityMotionDuration,
+            EnableDependentAnimation = true
+        };
+        Storyboard.SetTarget(animation, element);
+        Storyboard.SetTargetProperty(animation, nameof(UIElement.Opacity));
+
+        Storyboard storyboard = new();
+        storyboard.Children.Add(animation);
+        return storyboard;
     }
 
     private FrameworkElement CreateCountdownSelectorItem(CountdownItem countdown, int index, bool isSelected)
@@ -454,8 +739,9 @@ public sealed partial class MainWindow : Window
         if (!_isWindows11OrGreater)
         {
             TileButton.Foreground = GetToggleBrush(_state.TileEnabled);
-            ToolTipService.SetToolTip(TileButton, GetString("TileButton/Tooltip"));
-            AutomationProperties.SetName(TileButton, GetString("TileButton/Tooltip"));
+            string tileTooltip = GetString(_state.TileEnabled ? "TileButton/DisableTooltip" : "TileButton/EnableTooltip");
+            ToolTipService.SetToolTip(TileButton, tileTooltip);
+            AutomationProperties.SetName(TileButton, tileTooltip);
             AutomationProperties.SetHelpText(TileButton, GetString("TileButton/HelpText"));
             return;
         }
@@ -466,12 +752,28 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetHelpText(TileButton, GetString("WidgetButton/HelpText"));
     }
 
-    private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
+    private async void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
     {
-        if (_isWindows11OrGreater && args.WindowActivationState != WindowActivationState.Deactivated)
+        if (args.WindowActivationState == WindowActivationState.Deactivated)
+        {
+            return;
+        }
+
+        if (_isWindows11OrGreater)
         {
             SyncWidgets();
             UpdateGlanceSurfaceStatus();
+            return;
+        }
+
+        await RefreshStartTileStateAsync();
+    }
+
+    private async Task RefreshStartTileStateAsync()
+    {
+        if (_state.TileEnabled && !await _startMenuService.IsPinnedAsync())
+        {
+            await ApplyCommittedStateAsync(_state.With(tileEnabled: false), reconcileStartupTask: true);
         }
     }
 
@@ -492,6 +794,9 @@ public sealed partial class MainWindow : Window
     private async Task ApplyCommittedStateAsync(CountdownState state, bool reconcileStartupTask, bool refreshEditor = false)
     {
         _state = NormalizeStateForCurrentOs(state);
+        SetDeleteButtonVisible(_state.CanRemoveCountdown);
+        RootGrid.UpdateLayout();
+
         if (refreshEditor)
         {
             _isUpdatingControls = true;
@@ -542,10 +847,11 @@ public sealed partial class MainWindow : Window
 
     private async Task UpdateLiveTileFromStateAsync()
     {
-        string daysLeft = FormatDaysLeft(_dateDifference);
+        CountdownDisplayText displayText = CreateDisplayText();
+        string daysLeft = displayText.FormatDaysLeft(_dateDifference, CultureInfo.CurrentCulture);
         if (_state.TileEnabled)
         {
-            await _startMenuService.UpdateLiveTileAsync(daysLeft, _state.Title);
+            await _startMenuService.UpdateLiveTileAsync(daysLeft, displayText.FormatTitle(_state.Title));
         }
         else
         {
@@ -560,9 +866,8 @@ public sealed partial class MainWindow : Window
 
     private void ShowStartupNotificationSavedToast(bool toastEnabled)
     {
-        string countdownTitle = string.IsNullOrWhiteSpace(_state.Title)
-            ? GetString("AppName")
-            : _state.Title;
+        CountdownDisplayText displayText = CreateDisplayText();
+        string countdownTitle = displayText.FormatTitle(_state.Title);
         string contentFormat = GetString(toastEnabled
             ? "ToastButton/EnabledSavedContentFormat"
             : "ToastButton/DisabledSavedContentFormat");
@@ -748,9 +1053,10 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        if (!await _startMenuService.IsPinnedAsync())
+        bool isPinned = await _startMenuService.IsPinnedAsync();
+        if (_state.TileEnabled && !isPinned)
         {
-            await _startMenuService.RequestPinAsync();
+            await ApplyCommittedStateAsync(_state.With(tileEnabled: false), reconcileStartupTask: true);
         }
 
         bool tileEnabled = !_state.TileEnabled;
@@ -758,6 +1064,16 @@ public sealed partial class MainWindow : Window
         {
             await ApplyCommittedStateAsync(_state.With(tileEnabled: false), reconcileStartupTask: true);
             return;
+        }
+
+        if (!isPinned)
+        {
+            bool pinned = await _startMenuService.RequestPinAsync();
+            if (!pinned)
+            {
+                UpdateButtonStatus();
+                return;
+            }
         }
 
         CountdownDraft draft = CreateDraftFromControls(tileEnabled: true);
@@ -768,18 +1084,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        if (!await _startupFeatureService.EnsureAvailableForAsync(nextState))
-        {
-            _state = _state.With(tileEnabled: false);
-            _settingsStore.Save(_state);
-            UpdateButtonStatus();
-            _startupNotificationService.ShowToast(
-                GetString("CreateStartupTaskFailedNotification/Title"),
-                GetString("CreateStartupTaskFailedNotification/Content"));
-            return;
-        }
-
-        await ApplyCommittedStateAsync(nextState, reconcileStartupTask: false);
+        await TryApplyStartupBackedStateAsync(nextState);
     }
 
     private void ShowWidgetHelpFlyout()
@@ -876,17 +1181,10 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        if (!await _startupFeatureService.EnsureAvailableForAsync(nextState))
+        if (await TryApplyStartupBackedStateAsync(nextState))
         {
-            _startupNotificationService.ShowToast(
-                GetString("CreateStartupTaskFailedNotification/Title"),
-                GetString("CreateStartupTaskFailedNotification/Content"));
-            UpdateButtonStatus();
-            return;
+            ShowStartupNotificationSavedToast(toastEnabled);
         }
-
-        await ApplyCommittedStateAsync(nextState, reconcileStartupTask: false);
-        ShowStartupNotificationSavedToast(toastEnabled);
     }
 
     private async void AddButton_Click(object sender, RoutedEventArgs e)
@@ -910,4 +1208,18 @@ public sealed partial class MainWindow : Window
         await ApplyCommittedStateAsync(_state.RemoveCountdown(_state.SelectedCountdownId), reconcileStartupTask: true, refreshEditor: true);
     }
 
+    private async Task<bool> TryApplyStartupBackedStateAsync(CountdownState nextState)
+    {
+        if (!await _startupFeatureService.EnsureAvailableForAsync(nextState))
+        {
+            _startupNotificationService.ShowToast(
+                GetString("CreateStartupTaskFailedNotification/Title"),
+                GetString("CreateStartupTaskFailedNotification/Content"));
+            UpdateButtonStatus();
+            return false;
+        }
+
+        await ApplyCommittedStateAsync(nextState, reconcileStartupTask: false);
+        return true;
+    }
 }

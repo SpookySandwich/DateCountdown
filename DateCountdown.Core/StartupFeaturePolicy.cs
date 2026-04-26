@@ -2,21 +2,21 @@ namespace DateCountdown.Core
 {
     public sealed class StartupFeaturePolicy
     {
-        private readonly bool _supportsLiveTileStartup;
+        private readonly bool _supportsStartTile;
 
-        public StartupFeaturePolicy(bool supportsLiveTileStartup)
+        public StartupFeaturePolicy(bool supportsStartTile)
         {
-            _supportsLiveTileStartup = supportsLiveTileStartup;
+            _supportsStartTile = supportsStartTile;
         }
 
         public bool RequiresStartupTask(CountdownState state)
         {
-            return state.AnyToastEnabled || (_supportsLiveTileStartup && state.TileEnabled);
+            return state.AnyToastEnabled || (_supportsStartTile && state.TileEnabled);
         }
 
         public CountdownState NormalizeState(CountdownState state)
         {
-            return _supportsLiveTileStartup || !state.TileEnabled
+            return _supportsStartTile || !state.TileEnabled
                 ? state
                 : state.With(tileEnabled: false);
         }

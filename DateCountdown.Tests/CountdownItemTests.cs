@@ -1,5 +1,7 @@
 using DateCountdown.Core;
 using System;
+using System.Globalization;
+using System.Linq;
 using Xunit;
 
 namespace DateCountdown.Tests;
@@ -23,6 +25,25 @@ public sealed class CountdownItemTests
         CountdownItem item = new("id", null, DateTimeOffset.UnixEpoch);
 
         Assert.Equal(string.Empty, item.Title);
+    }
+
+    [Fact]
+    public void Constructor_TrimsTitle()
+    {
+        CountdownItem item = new("id", "  Launch  ", DateTimeOffset.UnixEpoch);
+
+        Assert.Equal("Launch", item.Title);
+    }
+
+    [Fact]
+    public void Constructor_LimitsTitleByTextElementWithoutSplittingEmoji()
+    {
+        string title = string.Concat(Enumerable.Repeat("🙂", CountdownItem.MaxTitleLength + 1));
+
+        CountdownItem item = new("id", title, DateTimeOffset.UnixEpoch);
+
+        Assert.Equal(CountdownItem.MaxTitleLength, StringInfo.ParseCombiningCharacters(item.Title).Length);
+        Assert.EndsWith("🙂", item.Title, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -55,5 +76,15 @@ public sealed class CountdownItemTests
         CountdownItem updated = item.With(toastEnabled: false);
 
         Assert.False(updated.ToastEnabled);
+    }
+
+    [Fact]
+    public void With_NormalizesUpdatedTitle()
+    {
+        CountdownItem item = new("id", "Launch", DateTimeOffset.UnixEpoch);
+
+        CountdownItem updated = item.With(title: "  Updated  ");
+
+        Assert.Equal("Updated", updated.Title);
     }
 }

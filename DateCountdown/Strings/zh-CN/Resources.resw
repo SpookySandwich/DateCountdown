@@ -120,6 +120,9 @@
   <data name="AppName" xml:space="preserve">
     <value>日期倒计时</value>
   </data>
+  <data name="AppDescription" xml:space="preserve">
+    <value>跟踪重要日期的倒计时。</value>
+  </data>
   <data name="AppTile" xml:space="preserve">
     <value>倒计时</value>
   </data>
@@ -145,10 +148,10 @@
     <value>倒计时 {0}</value>
   </data>
   <data name="CreateStartupTaskFailedNotification.Content" xml:space="preserve">
-    <value>请在任务管理器中手动开启启动项</value>
+    <value>请在启动应用中启用日期倒计时，然后重试。</value>
   </data>
   <data name="CreateStartupTaskFailedNotification.Title" xml:space="preserve">
-    <value>无法启用消息推送</value>
+    <value>需要启动权限</value>
   </data>
   <data name="DaysLeft.Text" xml:space="preserve">
     <value>剩余{0:days}天</value>
@@ -167,13 +170,19 @@
     <value>日期</value>
   </data>
   <data name="TileButton.HelpText" xml:space="preserve">
-    <value>切换开始屏幕磁贴更新。更改会立即保存。</value>
+    <value>将倒计时添加到 Windows 开始磁贴，或从开始磁贴移除。更改会立即保存。</value>
+  </data>
+  <data name="TileButton.DisableTooltip" xml:space="preserve">
+    <value>停止更新开始磁贴</value>
+  </data>
+  <data name="TileButton.EnableTooltip" xml:space="preserve">
+    <value>添加到开始磁贴</value>
   </data>
   <data name="TileButton.Content" xml:space="preserve">
     <value>开始磁贴</value>
   </data>
   <data name="TileButton.Tooltip" xml:space="preserve">
-    <value>在磁贴上显示</value>
+    <value>添加到开始磁贴</value>
   </data>
   <data name="Title.Header" xml:space="preserve">
     <value>标题</value>
@@ -189,10 +198,10 @@
     <value>开机通知</value>
   </data>
   <data name="ToastButton.DisabledSavedContentFormat" xml:space="preserve">
-    <value>{0} 不会发送开机通知。</value>
+    <value>{0} 的开机通知已关闭。</value>
   </data>
   <data name="ToastButton.EnabledSavedContentFormat" xml:space="preserve">
-    <value>{0} 会发送开机通知。</value>
+    <value>{0} 的开机通知已开启。</value>
   </data>
   <data name="ToastButton.SavedTitle" xml:space="preserve">
     <value>通知设置已保存</value>
@@ -206,6 +215,9 @@
   <data name="WidgetButton.Tooltip" xml:space="preserve">
     <value>固定小组件</value>
   </data>
+  <data name="WidgetDescription" xml:space="preserve">
+    <value>显示日期倒计时中保存的倒计时。</value>
+  </data>
   <data name="WidgetFlyout.OkButton" xml:space="preserve">
     <value>确定</value>
   </data>
@@ -213,12 +225,15 @@
     <value>选择 +，然后选择日期倒计时。</value>
   </data>
   <data name="WidgetFlyout.StepOpen" xml:space="preserve">
-    <value>从任务栏打开小组件，或按 Win+W。</value>
+    <value>从任务栏打开小组件。</value>
   </data>
   <data name="WidgetFlyout.StepPin" xml:space="preserve">
     <value>选择固定。</value>
   </data>
   <data name="WidgetFlyout.Title" xml:space="preserve">
     <value>固定小组件</value>
+  </data>
+  <data name="WidgetPreviewAltText" xml:space="preserve">
+    <value>日期倒计时小组件预览</value>
   </data>
 </root>

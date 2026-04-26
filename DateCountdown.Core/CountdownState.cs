@@ -16,7 +16,7 @@ namespace DateCountdown.Core
         {
         }
 
-        public CountdownState(IEnumerable<CountdownItem> countdowns, string? selectedCountdownId, bool tileEnabled, bool toastEnabled)
+        public CountdownState(IEnumerable<CountdownItem?>? countdowns, string? selectedCountdownId, bool tileEnabled, bool toastEnabled)
         {
             List<CountdownItem> items = Deduplicate(countdowns).ToList();
             if (items.Count == 0)
@@ -84,8 +84,13 @@ namespace DateCountdown.Core
                 toastEnabled: false);
         }
 
-        public CountdownState AddCountdown(CountdownItem countdown, bool selectCountdown)
+        public CountdownState AddCountdown(CountdownItem? countdown, bool selectCountdown)
         {
+            if (countdown is null)
+            {
+                return this;
+            }
+
             string id = countdown.Id;
             if (Countdowns.Any(item => string.Equals(item.Id, id, StringComparison.Ordinal)))
             {
@@ -140,12 +145,12 @@ namespace DateCountdown.Core
             return new CountdownState(countdowns, selectedCountdownId, TileEnabled, toastEnabled: false);
         }
 
-        private static IEnumerable<CountdownItem> Deduplicate(IEnumerable<CountdownItem> countdowns)
+        private static IEnumerable<CountdownItem> Deduplicate(IEnumerable<CountdownItem?>? countdowns)
         {
             HashSet<string> ids = new HashSet<string>(StringComparer.Ordinal);
-            foreach (CountdownItem countdown in countdowns ?? Enumerable.Empty<CountdownItem>())
+            foreach (CountdownItem? countdown in countdowns ?? Enumerable.Empty<CountdownItem?>())
             {
-                if (ids.Add(countdown.Id))
+                if (countdown is not null && ids.Add(countdown.Id))
                 {
                     yield return countdown;
                 }

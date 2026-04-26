@@ -8,9 +8,9 @@ internal sealed class StartupFeatureService
     private readonly StartupFeaturePolicy _policy;
     private readonly StartupNotificationService _startupNotificationService;
 
-    public StartupFeatureService(bool supportsLiveTileStartup, StartupNotificationService startupNotificationService)
+    public StartupFeatureService(bool supportsStartTile, StartupNotificationService startupNotificationService)
     {
-        _policy = new StartupFeaturePolicy(supportsLiveTileStartup);
+        _policy = new StartupFeaturePolicy(supportsStartTile);
         _startupNotificationService = startupNotificationService;
     }
 

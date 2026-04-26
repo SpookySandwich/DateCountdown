@@ -1,6 +1,7 @@
 using Microsoft.UI.Xaml;
 using Microsoft.Windows.AppLifecycle;
 using System;
+using DateCountdown.Services;
 
 namespace DateCountdown;
 
@@ -15,16 +16,25 @@ public partial class App : Application
 
     protected override async void OnLaunched(LaunchActivatedEventArgs args)
     {
-        MainWindow window = new();
-        _window = window;
-
         if (IsStartupTaskLaunch())
         {
-            await window.DoStartupTaskAsync();
-            window.Close();
+            try
+            {
+                await new StartupTaskRunner(OperatingSystemInfo.IsWindows11OrGreater()).RunAsync();
+            }
+            catch
+            {
+            }
+            finally
+            {
+                Exit();
+            }
+
             return;
         }
 
+        MainWindow window = new();
+        _window = window;
         window.Activate();
     }
 

@@ -6,7 +6,7 @@ namespace DateCountdown.Core
     {
         public CountdownDraft(string? title, DateTimeOffset? targetDate, bool tileEnabled, bool toastEnabled)
         {
-            Title = title ?? string.Empty;
+            Title = CountdownItem.NormalizeTitle(title);
             TargetDate = targetDate;
             TileEnabled = tileEnabled;
             ToastEnabled = toastEnabled;

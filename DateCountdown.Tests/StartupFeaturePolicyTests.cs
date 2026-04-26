@@ -9,26 +9,17 @@ public sealed class StartupFeaturePolicyTests
     private static readonly DateTimeOffset TargetDate = new(2026, 5, 8, 0, 0, 0, TimeSpan.Zero);
 
     [Theory]
-    [InlineData(false, false, false)]
-    [InlineData(true, false, true)]
-    [InlineData(false, true, true)]
-    [InlineData(true, true, true)]
-    public void RequiresStartupTask_OnWin10_WhenToastOrTileIsEnabled(bool toastEnabled, bool tileEnabled, bool expected)
+    [InlineData(false, false, false, false)]
+    [InlineData(false, true, false, true)]
+    [InlineData(false, false, true, false)]
+    [InlineData(false, true, true, true)]
+    [InlineData(true, false, false, false)]
+    [InlineData(true, true, false, true)]
+    [InlineData(true, false, true, true)]
+    [InlineData(true, true, true, true)]
+    public void RequiresStartupTask_UsesNotificationsAndSupportedStartTile(bool supportsStartTile, bool toastEnabled, bool tileEnabled, bool expected)
     {
-        StartupFeaturePolicy policy = new(supportsLiveTileStartup: true);
-        CountdownState state = new("Launch", TargetDate, tileEnabled, toastEnabled);
-
-        Assert.Equal(expected, policy.RequiresStartupTask(state));
-    }
-
-    [Theory]
-    [InlineData(false, false, false)]
-    [InlineData(true, false, true)]
-    [InlineData(false, true, false)]
-    [InlineData(true, true, true)]
-    public void RequiresStartupTask_OnWin11_IgnoresTileAndUsesToast(bool toastEnabled, bool tileEnabled, bool expected)
-    {
-        StartupFeaturePolicy policy = new(supportsLiveTileStartup: false);
+        StartupFeaturePolicy policy = new(supportsStartTile);
         CountdownState state = new("Launch", TargetDate, tileEnabled, toastEnabled);
 
         Assert.Equal(expected, policy.RequiresStartupTask(state));
@@ -37,7 +28,7 @@ public sealed class StartupFeaturePolicyTests
     [Fact]
     public void RequiresStartupTask_UsesAnyCountdownNotification()
     {
-        StartupFeaturePolicy policy = new(supportsLiveTileStartup: false);
+        StartupFeaturePolicy policy = new(supportsStartTile: false);
         CountdownState state = new CountdownState(
             new[]
             {
@@ -55,7 +46,7 @@ public sealed class StartupFeaturePolicyTests
     [Fact]
     public void NormalizeState_OnWin10_PreservesTileSetting()
     {
-        StartupFeaturePolicy policy = new(supportsLiveTileStartup: true);
+        StartupFeaturePolicy policy = new(supportsStartTile: true);
         CountdownState state = new("Launch", TargetDate, tileEnabled: true, toastEnabled: false);
 
         CountdownState normalized = policy.NormalizeState(state);
@@ -67,7 +58,7 @@ public sealed class StartupFeaturePolicyTests
     [Fact]
     public void NormalizeState_OnWin11_ClearsTileSettingAndPreservesToast()
     {
-        StartupFeaturePolicy policy = new(supportsLiveTileStartup: false);
+        StartupFeaturePolicy policy = new(supportsStartTile: false);
         CountdownState state = new("Launch", TargetDate, tileEnabled: true, toastEnabled: true);
 
         CountdownState normalized = policy.NormalizeState(state);
@@ -79,7 +70,7 @@ public sealed class StartupFeaturePolicyTests
     [Fact]
     public void NormalizeState_OnWin11_PreservesSelectedCountdown()
     {
-        StartupFeaturePolicy policy = new(supportsLiveTileStartup: false);
+        StartupFeaturePolicy policy = new(supportsStartTile: false);
         CountdownState state = new CountdownState(
             new[]
             {

@@ -22,10 +22,24 @@ namespace DateCountdown.Core
 
         public string ManyDaysLeftFormat { get; }
 
+        public string FormatTitle(string? title)
+        {
+            string normalizedTitle = CountdownItem.NormalizeTitle(title);
+            return string.IsNullOrWhiteSpace(normalizedTitle) ? DefaultTitle : normalizedTitle;
+        }
+
         public string FormatDaysLeft(int daysLeft, CultureInfo? culture = null)
         {
             string format = daysLeft == 1 ? OneDayLeftFormat : ManyDaysLeftFormat;
-            return string.Format(culture ?? CultureInfo.CurrentCulture, format, daysLeft);
+            try
+            {
+                return string.Format(culture ?? CultureInfo.CurrentCulture, format, daysLeft);
+            }
+            catch (FormatException)
+            {
+                string fallbackFormat = daysLeft == 1 ? FallbackOneDayLeftFormat : FallbackManyDaysLeftFormat;
+                return string.Format(culture ?? CultureInfo.CurrentCulture, fallbackFormat, daysLeft);
+            }
         }
 
         private static string UseFallback(string? value, string fallback)

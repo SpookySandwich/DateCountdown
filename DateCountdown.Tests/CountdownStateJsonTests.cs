@@ -41,6 +41,12 @@ public sealed class CountdownStateJsonTests
     }
 
     [Fact]
+    public void SerializeCountdowns_ReturnsEmptyArrayForNullInput()
+    {
+        Assert.Equal("[]", CountdownStateJson.SerializeCountdowns(null));
+    }
+
+    [Fact]
     public void DeserializeCountdowns_SkipsItemsWithoutIds()
     {
         string json = """
@@ -54,6 +60,44 @@ public sealed class CountdownStateJsonTests
 
         Assert.Single(result);
         Assert.Equal("valid", result[0].Id);
+    }
+
+    [Fact]
+    public void DeserializeCountdowns_SkipsItemsWithoutValidDates()
+    {
+        string json = """
+            [
+              { "id": "missing-date", "title": "Missing date" },
+              { "id": "default-date", "title": "Default date", "targetDate": "0001-01-01T00:00:00+00:00" },
+              { "id": "bad-date", "title": "Bad date", "targetDate": "not a date" },
+              { "id": "valid", "title": "Valid", "targetDate": "2026-06-01T00:00:00+00:00" }
+            ]
+            """;
+
+        var result = CountdownStateJson.DeserializeCountdowns(json).ToList();
+
+        Assert.Single(result);
+        Assert.Equal("valid", result[0].Id);
+    }
+
+    [Fact]
+    public void DeserializeCountdowns_KeepsValidItemsWhenOtherArrayEntriesAreMalformed()
+    {
+        string json = """
+            [
+              null,
+              42,
+              { "id": 1, "title": "Bad id", "targetDate": "2026-05-08T00:00:00+00:00" },
+              { "id": "valid", "title": "  Valid  ", "targetDate": "2026-06-01T00:00:00+00:00", "toastEnabled": true }
+            ]
+            """;
+
+        var result = CountdownStateJson.DeserializeCountdowns(json).ToList();
+
+        Assert.Single(result);
+        Assert.Equal("valid", result[0].Id);
+        Assert.Equal("Valid", result[0].Title);
+        Assert.True(result[0].ToastEnabled);
     }
 
     [Fact]

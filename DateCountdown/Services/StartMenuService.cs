@@ -25,19 +25,21 @@ internal sealed class StartMenuService
         }
     }
 
-    public async Task RequestPinAsync()
+    public async Task<bool> RequestPinAsync()
     {
         try
         {
             AppListEntry? entry = await GetAppListEntryAsync();
             if (entry is not null)
             {
-                await StartScreenManager.GetDefault().RequestAddAppListEntryAsync(entry);
+                return await StartScreenManager.GetDefault().RequestAddAppListEntryAsync(entry);
             }
         }
         catch
         {
         }
+
+        return false;
     }
 
     public void ClearLiveTile()
@@ -55,7 +57,7 @@ internal sealed class StartMenuService
     {
         if (!await IsPinnedAsync())
         {
-            await RequestPinAsync();
+            return;
         }
 
         try
