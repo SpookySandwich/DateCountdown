@@ -11,7 +11,7 @@ namespace DateCountdown.Core
 
         public bool RequiresStartupTask(CountdownState state)
         {
-            return state.ToastEnabled || (_supportsLiveTileStartup && state.TileEnabled);
+            return state.AnyToastEnabled || (_supportsLiveTileStartup && state.TileEnabled);
         }
 
         public CountdownState NormalizeState(CountdownState state)

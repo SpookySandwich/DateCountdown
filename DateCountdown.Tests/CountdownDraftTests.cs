@@ -80,4 +80,32 @@ public sealed class CountdownDraftTests
         Assert.False(committed);
         Assert.Null(state);
     }
+
+    [Fact]
+    public void TryApplyTo_UpdatesSelectedCountdownAndPreservesOtherCountdowns()
+    {
+        CountdownState state = new CountdownState(
+            new[]
+            {
+                new CountdownItem("first", "First", Now.AddDays(1)),
+                new CountdownItem("second", "Second", Now.AddDays(2))
+            },
+            selectedCountdownId: "second",
+            tileEnabled: false,
+            toastEnabled: false);
+        CountdownDraft draft = new("Updated", Now.AddDays(3), tileEnabled: true, toastEnabled: true);
+
+        bool committed = draft.TryApplyTo(state, Now, out CountdownState? updatedState);
+
+        Assert.True(committed);
+        Assert.NotNull(updatedState);
+        Assert.Equal(2, updatedState.Countdowns.Count);
+        Assert.Equal("first", updatedState.Countdowns[0].Id);
+        Assert.Equal("First", updatedState.Countdowns[0].Title);
+        Assert.Equal("second", updatedState.SelectedCountdownId);
+        Assert.Equal("Updated", updatedState.Title);
+        Assert.Equal(Now.AddDays(3), updatedState.TargetDate);
+        Assert.True(updatedState.TileEnabled);
+        Assert.True(updatedState.ToastEnabled);
+    }
 }

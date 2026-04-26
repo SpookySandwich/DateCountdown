@@ -13,7 +13,7 @@
   <Identity
     Name="493F5EED-D9E4-420A-AA48-DFE3F51E895A"
     Publisher="CN=AppPublisher"
-    Version="1.0.0.2" />
+    Version="1.0.0.8" />
 
   <mp:PhoneIdentity PhoneProductId="493F5EED-D9E4-420A-AA48-DFE3F51E895A" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
@@ -87,7 +87,7 @@
                         <Icon Path="Assets\Square44x44Logo.scale-200.png" />
                       </Icons>
                       <Screenshots>
-                        <Screenshot Path="Assets\Wide310x150Logo.scale-200.png" DisplayAltText="Date Countdown widget preview" />
+                        <Screenshot Path="Assets\WidgetPreview.scale-200.png" DisplayAltText="Date Countdown widget preview" />
                       </Screenshots>
                       <DarkMode />
                       <LightMode />

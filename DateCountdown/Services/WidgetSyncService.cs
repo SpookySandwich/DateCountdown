@@ -1,4 +1,5 @@
 using DateCountdown.Core;
+using Microsoft.Windows.Widgets;
 using Microsoft.Windows.Widgets.Providers;
 using System;
 
@@ -23,20 +24,40 @@ internal sealed class WidgetSyncService
         try
         {
             WidgetManager widgetManager = WidgetManager.GetDefault();
-            foreach (string widgetId in widgetManager.GetWidgetIds())
+            var widgetInfos = widgetManager.GetWidgetInfos();
+            if (widgetInfos != null)
             {
-                WidgetUpdateRequestOptions options = new(widgetId)
+                foreach (WidgetInfo widgetInfo in widgetInfos)
                 {
-                    Template = CountdownWidgetContent.BuildTemplateJson(),
-                    Data = CountdownWidgetContent.BuildDataJson(state.Title, state.TargetDate, now, displayText),
-                    CustomState = state.TargetDate.ToString("O")
-                };
+                    if (!widgetInfo.WidgetContext.IsActive)
+                    {
+                        continue;
+                    }
 
-                widgetManager.UpdateWidget(options);
+                    CountdownWidgetSize size = ToCountdownWidgetSize(widgetInfo.WidgetContext.Size);
+                    WidgetUpdateRequestOptions options = new(widgetInfo.WidgetContext.Id)
+                    {
+                        Template = CountdownWidgetContent.BuildTemplateJson(state, size),
+                        Data = CountdownWidgetContent.BuildDataJson(state, now, displayText, size),
+                        CustomState = state.SelectedCountdownId
+                    };
+
+                    widgetManager.UpdateWidget(options);
+                }
             }
         }
         catch
         {
         }
+    }
+
+    private static CountdownWidgetSize ToCountdownWidgetSize(WidgetSize size)
+    {
+        return size switch
+        {
+            WidgetSize.Small => CountdownWidgetSize.Small,
+            WidgetSize.Medium => CountdownWidgetSize.Medium,
+            _ => CountdownWidgetSize.Large
+        };
     }
 }

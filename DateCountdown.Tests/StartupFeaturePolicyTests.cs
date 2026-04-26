@@ -35,6 +35,24 @@ public sealed class StartupFeaturePolicyTests
     }
 
     [Fact]
+    public void RequiresStartupTask_UsesAnyCountdownNotification()
+    {
+        StartupFeaturePolicy policy = new(supportsLiveTileStartup: false);
+        CountdownState state = new CountdownState(
+            new[]
+            {
+                new CountdownItem("first", "First", TargetDate, toastEnabled: true),
+                new CountdownItem("second", "Second", TargetDate.AddDays(1), toastEnabled: false)
+            },
+            selectedCountdownId: "second",
+            tileEnabled: false,
+            toastEnabled: false);
+
+        Assert.False(state.ToastEnabled);
+        Assert.True(policy.RequiresStartupTask(state));
+    }
+
+    [Fact]
     public void NormalizeState_OnWin10_PreservesTileSetting()
     {
         StartupFeaturePolicy policy = new(supportsLiveTileStartup: true);
@@ -56,5 +74,27 @@ public sealed class StartupFeaturePolicyTests
 
         Assert.False(normalized.TileEnabled);
         Assert.True(normalized.ToastEnabled);
+    }
+
+    [Fact]
+    public void NormalizeState_OnWin11_PreservesSelectedCountdown()
+    {
+        StartupFeaturePolicy policy = new(supportsLiveTileStartup: false);
+        CountdownState state = new CountdownState(
+            new[]
+            {
+                new CountdownItem("first", "First", TargetDate),
+                new CountdownItem("second", "Second", TargetDate.AddDays(1))
+            },
+            selectedCountdownId: "second",
+            tileEnabled: true,
+            toastEnabled: false);
+
+        CountdownState normalized = policy.NormalizeState(state);
+
+        Assert.Equal(2, normalized.Countdowns.Count);
+        Assert.Equal("second", normalized.SelectedCountdownId);
+        Assert.Equal("Second", normalized.Title);
+        Assert.False(normalized.TileEnabled);
     }
 }

@@ -9,6 +9,7 @@
     <Grid Background="Transparent">
         <Grid.RowDefinitions>
             <RowDefinition Height="32" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
 
@@ -16,8 +17,37 @@
             x:Name="AppTitleBar"
             Background="Transparent" />
 
-        <ScrollViewer
+        <Grid
+            x:Name="CountdownSelectorFrame"
             Grid.Row="1"
+            Margin="32,8,32,0"
+            HorizontalAlignment="Stretch"
+            Visibility="Collapsed">
+            <ScrollViewer
+                x:Name="CountdownSelectorRail"
+                HorizontalAlignment="Stretch"
+                HorizontalScrollBarVisibility="Hidden"
+                HorizontalScrollMode="Enabled"
+                PointerCanceled="CountdownSelectorRail_PointerCanceled"
+                PointerMoved="CountdownSelectorRail_PointerMoved"
+                PointerPressed="CountdownSelectorRail_PointerPressed"
+                PointerReleased="CountdownSelectorRail_PointerReleased"
+                PointerWheelChanged="CountdownSelectorRail_PointerWheelChanged"
+                SizeChanged="CountdownSelectorRail_SizeChanged"
+                VerticalScrollBarVisibility="Disabled"
+                VerticalScrollMode="Disabled">
+                <Grid x:Name="CountdownSelectorContentHost">
+                    <StackPanel
+                        x:Name="CountdownSelectorItems"
+                        HorizontalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="18" />
+                </Grid>
+            </ScrollViewer>
+        </Grid>
+
+        <ScrollViewer
+            Grid.Row="2"
             HorizontalScrollBarVisibility="Disabled"
             HorizontalScrollMode="Disabled"
             VerticalScrollBarVisibility="Auto"
@@ -110,6 +140,34 @@
                                 FontFamily="Segoe MDL2 Assets"
                                 FontSize="16"
                                 Glyph="&#xECA5;" />
+                        </Button>
+                        <Button
+                            x:Name="DeleteButton"
+                            Width="40"
+                            Height="40"
+                            Padding="0"
+                            AutomationProperties.AutomationId="DeleteCountdownButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="DeleteButton_Click">
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="16"
+                                Glyph="&#xE74D;" />
+                        </Button>
+                        <Button
+                            x:Name="AddButton"
+                            Width="40"
+                            Height="40"
+                            Padding="0"
+                            AutomationProperties.AutomationId="AddCountdownButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="AddButton_Click">
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="16"
+                                Glyph="&#xE710;" />
                         </Button>
                     </StackPanel>
                 </StackPanel>

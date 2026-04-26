@@ -11,7 +11,7 @@ namespace DateCountdown.Windowing;
 
 internal sealed class WindowChromeService
 {
-    private const int CompactWindowHeight = 420;
+    private const int CompactWindowHeight = 460;
     private const int CompactWindowWidth = 420;
     private const uint MinimumWindowSizeSubclassId = 1;
     private const uint WmGetMinMaxInfo = 0x0024;

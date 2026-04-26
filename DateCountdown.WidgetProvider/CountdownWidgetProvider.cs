@@ -1,5 +1,6 @@
 using DateCountdown.Core;
 using Microsoft.Windows.ApplicationModel.Resources;
+using Microsoft.Windows.Widgets;
 using Microsoft.Windows.Widgets.Providers;
 using System;
 using System.Collections.Generic;
@@ -16,13 +17,13 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
     public void Activate(WidgetContext widgetContext)
     {
         AddWidget(widgetContext);
-        UpdateWidget(widgetContext.Id);
+        UpdateWidget(widgetContext);
     }
 
     public void CreateWidget(WidgetContext widgetContext)
     {
         AddWidget(widgetContext);
-        UpdateWidget(widgetContext.Id);
+        UpdateWidget(widgetContext);
     }
 
     public void Deactivate(string widgetId)
@@ -39,14 +40,14 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
     {
         if (string.Equals(actionInvokedArgs.Verb, "refresh", StringComparison.OrdinalIgnoreCase))
         {
-            UpdateWidget(actionInvokedArgs.WidgetContext.Id);
+            UpdateWidget(actionInvokedArgs.WidgetContext);
         }
     }
 
     public void OnWidgetContextChanged(WidgetContextChangedArgs contextChangedArgs)
     {
         AddWidget(contextChangedArgs.WidgetContext);
-        UpdateWidget(contextChangedArgs.WidgetContext.Id);
+        UpdateWidget(contextChangedArgs.WidgetContext);
     }
 
     public void WaitForExit()
@@ -79,16 +80,17 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
         }
     }
 
-    private static void UpdateWidget(string widgetId)
+    private static void UpdateWidget(WidgetContext widgetContext)
     {
         try
         {
             CountdownState state = ReadState();
-            WidgetUpdateRequestOptions options = new(widgetId)
+            CountdownWidgetSize size = ToCountdownWidgetSize(widgetContext.Size);
+            WidgetUpdateRequestOptions options = new(widgetContext.Id)
             {
-                Template = CountdownWidgetContent.BuildTemplateJson(),
-                Data = CountdownWidgetContent.BuildDataJson(state.Title, state.TargetDate, DateTimeOffset.Now, CreateDisplayText()),
-                CustomState = state.TargetDate.ToString("O")
+                Template = CountdownWidgetContent.BuildTemplateJson(state, size),
+                Data = CountdownWidgetContent.BuildDataJson(state, DateTimeOffset.Now, CreateDisplayText(), size),
+                CustomState = state.SelectedCountdownId
             };
 
             WidgetManager.GetDefault().UpdateWidget(options);
@@ -98,9 +100,26 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
         }
     }
 
+    private static CountdownWidgetSize ToCountdownWidgetSize(WidgetSize size)
+    {
+        return size switch
+        {
+            WidgetSize.Small => CountdownWidgetSize.Small,
+            WidgetSize.Medium => CountdownWidgetSize.Medium,
+            _ => CountdownWidgetSize.Large
+        };
+    }
+
     private static CountdownState ReadState()
     {
         ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
+        IReadOnlyList<CountdownItem> countdowns = CountdownStateJson.DeserializeCountdowns(localSettings.Values[CountdownSettingsKeys.Countdowns] as string);
+        string selectedCountdownId = localSettings.Values[CountdownSettingsKeys.SelectedCountdownId] as string ?? string.Empty;
+        if (countdowns.Count > 0)
+        {
+            return new CountdownState(countdowns, selectedCountdownId, tileEnabled: false, toastEnabled: false);
+        }
+
         string title = localSettings.Values[CountdownSettingsKeys.Title] as string ?? string.Empty;
         DateTimeOffset targetDate = CountdownLogic.ReadDateValue(localSettings.Values[CountdownSettingsKeys.TargetDate], DateTimeOffset.Now);
 

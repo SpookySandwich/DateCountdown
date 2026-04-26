@@ -25,6 +25,7 @@
     <Content Include="Assets\LargeTile.scale-200.png" />
     <Content Include="Assets\AppIcon.ico" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
+    <Content Include="Assets\WidgetPreview.scale-200.png" />
   </ItemGroup>
 
   <ItemGroup>
@@ -85,5 +86,14 @@
       DestinationFiles="@(WidgetProviderOutputFiles->'$(OutDir)DateCountdown.WidgetProvider\%(RecursiveDir)%(Filename)%(Extension)')"
       SkipUnchangedFiles="true"
       Condition="'@(WidgetProviderOutputFiles)' != ''" />
+  </Target>
+
+  <Target Name="AddWidgetProviderPackagePayload" BeforeTargets="_ComputeAppxPackagePayload" DependsOnTargets="CopyWidgetProviderOutput">
+    <ItemGroup>
+      <WidgetProviderPackagePayload Include="$(OutDir)DateCountdown.WidgetProvider\**\*.*" />
+      <AppxPackagePayload Include="@(WidgetProviderPackagePayload)">
+        <TargetPath>DateCountdown.WidgetProvider\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
+      </AppxPackagePayload>
+    </ItemGroup>
   </Target>
 </Project>

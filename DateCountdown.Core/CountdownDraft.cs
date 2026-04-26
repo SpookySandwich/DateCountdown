@@ -38,5 +38,21 @@ namespace DateCountdown.Core
             state = new CountdownState(Title, TargetDate!.Value, TileEnabled, ToastEnabled);
             return true;
         }
+
+        public bool TryApplyTo(CountdownState currentState, DateTimeOffset now, out CountdownState? state)
+        {
+            if (!CanCommit(now))
+            {
+                state = null;
+                return false;
+            }
+
+            state = currentState.With(
+                title: Title,
+                targetDate: TargetDate!.Value,
+                tileEnabled: TileEnabled,
+                toastEnabled: ToastEnabled);
+            return true;
+        }
     }
 }
