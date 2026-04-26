@@ -1,0 +1,130 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Window
+    x:Class="DateCountdown.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d">
+    <Window.SystemBackdrop>
+        <DesktopAcrylicBackdrop />
+    </Window.SystemBackdrop>
+
+    <Grid Background="Transparent">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="32" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <Grid
+            x:Name="AppTitleBar"
+            Background="Transparent" />
+
+        <Grid
+            Grid.Row="1"
+            Background="Transparent">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="8*" />
+                <RowDefinition Height="2*" />
+                <RowDefinition Height="3*" />
+                <RowDefinition Height="3*" />
+            </Grid.RowDefinitions>
+
+            <Grid
+                Grid.Row="0"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Bottom">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+
+                <TextBlock
+                    x:Name="TextBlockDays"
+                    x:Uid="DaysLeft"
+                    AutomationProperties.AccessibilityView="Content"
+                    FontFamily="Segoe UI Light"
+                    FontSize="72"
+                    TextAlignment="Center"
+                    TextWrapping="NoWrap" />
+                <TextBlock
+                    x:Name="TextBlockTitle"
+                    Grid.Row="1"
+                    MaxWidth="340"
+                    AutomationProperties.AccessibilityView="Content"
+                    HorizontalAlignment="Center"
+                    TextAlignment="Center"
+                    TextTrimming="CharacterEllipsis"
+                    TextWrapping="WrapWholeWords" />
+            </Grid>
+
+            <StackPanel
+                Grid.Row="2"
+                Width="340"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Spacing="8">
+                <CalendarDatePicker
+                    x:Name="DatePickerTargetDate"
+                    AutomationProperties.AutomationId="TargetDatePicker"
+                    DateChanged="DatePickerTargetDate_SelectedDateChanged"
+                    HorizontalAlignment="Stretch" />
+                <TextBox
+                    x:Name="TextBoxTitle"
+                    x:Uid="Title"
+                    AutomationProperties.AutomationId="CountdownTitleTextBox"
+                    TextChanged="TextBoxTitle_TextChanged"
+                    TextWrapping="Wrap" />
+            </StackPanel>
+
+            <StackPanel
+                Grid.Row="3"
+                HorizontalAlignment="Center"
+                VerticalAlignment="Top"
+                Spacing="8">
+                <StackPanel
+                    x:Name="ToggleButtons"
+                    HorizontalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <Button
+                        x:Name="NotifyButton"
+                        Width="40"
+                        Height="40"
+                        Padding="0"
+                        AutomationProperties.AutomationId="StartupNotificationToggle"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="NotifyButton_Click">
+                        <FontIcon
+                            FontFamily="Segoe MDL2 Assets"
+                            FontSize="16"
+                            Glyph="&#xE91C;" />
+                    </Button>
+                    <Button
+                        x:Name="TileButton"
+                        Width="40"
+                        Height="40"
+                        Padding="0"
+                        AutomationProperties.AutomationId="TileToggle"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        Click="TileButton_Click">
+                        <FontIcon
+                            FontFamily="Segoe MDL2 Assets"
+                            FontSize="16"
+                            Glyph="&#xECA5;" />
+                    </Button>
+                </StackPanel>
+
+                <Button
+                    x:Name="ButtonSet"
+                    x:Uid="ButtonSet"
+                    AutomationProperties.AutomationId="SaveCountdownButton"
+                    Click="ButtonSet_Click"
+                    HorizontalAlignment="Center"
+                    IsEnabled="False" />
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>
