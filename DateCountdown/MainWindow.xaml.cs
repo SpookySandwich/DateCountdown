@@ -1,87 +1,69 @@
+using DateCountdown.Core;
+using DateCountdown.Services;
+using DateCountdown.Windowing;
 using Microsoft.UI;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.Windows.ApplicationModel.Resources;
-using Microsoft.Windows.AppNotifications;
-using Microsoft.Windows.AppNotifications.Builder;
 using System;
 using System.Globalization;
-using System.Security;
 using System.Threading.Tasks;
-using Windows.ApplicationModel;
-using Windows.ApplicationModel.Core;
-using Windows.Data.Xml.Dom;
-using Windows.Storage;
-using Windows.UI.Notifications;
 
 namespace DateCountdown;
 
 public sealed partial class MainWindow : Window
 {
-    private const string NotificationTag = "tag";
-    private const string StartupTaskId = "DateCountdownStartupId";
+    private const string TileGlyph = "\uECA5";
+    private const string StartGlyph = "\uE8FC";
 
-    private readonly ApplicationDataContainer _localSettings = ApplicationData.Current.LocalSettings;
+    private readonly bool _isWindows11OrGreater = OperatingSystemInfo.IsWindows11OrGreater();
+    private readonly CountdownSettingsStore _settingsStore = new();
     private readonly ResourceLoader _resourceLoader = new();
+    private readonly StartMenuService _startMenuService = new();
+    private readonly StartupFeatureService _startupFeatureService;
+    private readonly StartupNotificationService _startupNotificationService = new();
+    private readonly WidgetSyncService _widgetSyncService;
+    private readonly WindowChromeService _windowChromeService = new();
 
+    private CountdownState _state = CountdownState.CreateDefault(DateTimeOffset.Now);
     private int _dateDifference;
-    private bool _newTileEnabled;
-    private bool _newToastEnabled;
-    private DateTimeOffset _targetDate;
-    private bool _tileEnabled;
-    private string _title = string.Empty;
-    private bool _toastEnabled;
+    private bool _isUpdatingControls;
+    private int _startPinStatusLoopVersion;
+    private int _startPinStatusRequestVersion;
 
     public MainWindow()
     {
+        _widgetSyncService = new WidgetSyncService(_isWindows11OrGreater);
+        _startupFeatureService = new StartupFeatureService(!_isWindows11OrGreater, _startupNotificationService);
+
         InitializeComponent();
 
-        ExtendsContentIntoTitleBar = true;
-        SetTitleBar(AppTitleBar);
-        Title = GetString("AppName");
-        AppWindow.SetIcon("Assets/AppIcon.ico");
+        _windowChromeService.Initialize(this, AppTitleBar, GetString("AppName"), _isWindows11OrGreater);
+        Activated += MainWindow_Activated;
 
-        LoadData();
+        LoadState();
         SetDisplay();
+        SyncWidgets();
+        _ = ReconcileStartupTaskAsync();
     }
 
     internal async Task DoStartupTaskAsync()
     {
-        LoadData();
-        _dateDifference = CalculateDateDifference(_targetDate);
+        LoadState();
+        _dateDifference = CountdownLogic.CalculateDaysLeft(_state.TargetDate, DateTimeOffset.Now);
 
-        if (_toastEnabled)
+        string daysLeft = FormatDaysLeft(_dateDifference);
+        if (_state.ToastEnabled)
         {
-            ShowToast(FormatString("DaysLeft/Text", _dateDifference.ToString(CultureInfo.CurrentCulture)), _title);
+            _startupNotificationService.ShowToast(daysLeft, _state.Title);
         }
 
-        if (_tileEnabled)
+        if (_state.TileEnabled && !_isWindows11OrGreater)
         {
-            await UpdateTileAsync(FormatString("DaysLeft/Text", _dateDifference.ToString(CultureInfo.CurrentCulture)), _title);
+            await _startMenuService.UpdateLiveTileAsync(daysLeft, _state.Title);
         }
-    }
-
-    private static int CalculateDateDifference(DateTimeOffset targetDate)
-    {
-        return (int)(targetDate.Date - DateTimeOffset.Now.Date).TotalDays;
-    }
-
-    private static DateTimeOffset ReadDateValue(object? value)
-    {
-        return value switch
-        {
-            DateTimeOffset date => date,
-            DateTime date => new DateTimeOffset(date),
-            string text when DateTimeOffset.TryParse(text, CultureInfo.CurrentCulture, DateTimeStyles.AssumeLocal, out DateTimeOffset date) => date,
-            _ => DateTimeOffset.Now,
-        };
-    }
-
-    private static string XmlEscape(string value)
-    {
-        return SecurityElement.Escape(value) ?? string.Empty;
     }
 
     private string GetString(string key)
@@ -89,261 +71,325 @@ public sealed partial class MainWindow : Window
         return _resourceLoader.GetString(key);
     }
 
-    private string FormatString(string key, string value)
+    private CountdownDisplayText CreateDisplayText()
     {
-        return string.Format(CultureInfo.CurrentCulture, GetString(key), value);
+        return new CountdownDisplayText(
+            GetString("AppName"),
+            GetString("DaysLeftOneText"),
+            GetString("DaysLeftManyText"));
     }
 
-    private void LoadData()
+    private string FormatDaysLeft(int daysLeft)
     {
-        _title = _localSettings.Values["title"] as string ?? string.Empty;
-        _targetDate = ReadDateValue(_localSettings.Values["targetDate"]);
-        _tileEnabled = _localSettings.Values["tileEnabled"] as bool? ?? false;
-        _toastEnabled = _localSettings.Values["toastEnabled"] as bool? ?? false;
-
-        _newTileEnabled = _tileEnabled;
-        _newToastEnabled = _toastEnabled;
+        return CreateDisplayText().FormatDaysLeft(daysLeft, CultureInfo.CurrentCulture);
     }
 
-    private void StoreData()
+    private void LoadState()
     {
-        _localSettings.Values["title"] = _title;
-        _localSettings.Values["targetDate"] = _targetDate;
-        _localSettings.Values["tileEnabled"] = _tileEnabled;
-        _localSettings.Values["toastEnabled"] = _toastEnabled;
+        _state = NormalizeStateForCurrentOs(_settingsStore.Load(DateTimeOffset.Now));
+    }
+
+    private CountdownState NormalizeStateForCurrentOs(CountdownState state)
+    {
+        return _startupFeatureService.NormalizeState(state);
     }
 
     private void SetDisplay()
     {
-        _dateDifference = CalculateDateDifference(_targetDate);
+        _isUpdatingControls = true;
+        try
+        {
+            UpdateCountdownPreview();
+            TextBoxTitle.PlaceholderText = GetString("Title/PlaceholderText");
+            TextBoxTitle.Text = _state.Title;
+            DatePickerTargetDate.MinDate = DateTimeOffset.Now.Date;
+            DatePickerTargetDate.Date = _state.TargetDate;
+        }
+        finally
+        {
+            _isUpdatingControls = false;
+        }
 
-        TextBlockTitle.Text = _title;
-        TextBlockDays.Text = FormatString("DaysLeft/Text", _dateDifference.ToString(CultureInfo.CurrentCulture));
-        TextBoxTitle.Text = _title;
-        DatePickerTargetDate.MinDate = DateTimeOffset.Now.Date;
-        DatePickerTargetDate.Date = _targetDate;
-
-        string tileTooltip = GetString("TileButton/Tooltip");
         string toastTooltip = GetString("ToastButton/Tooltip");
 
-        ToolTipService.SetToolTip(TileButton, tileTooltip);
+        ConfigureGlanceSurfaceButton();
         ToolTipService.SetToolTip(NotifyButton, toastTooltip);
-        AutomationProperties.SetName(TileButton, tileTooltip);
         AutomationProperties.SetName(NotifyButton, toastTooltip);
+        AutomationProperties.SetHelpText(NotifyButton, GetString("ToastButton/HelpText"));
         AutomationProperties.SetName(DatePickerTargetDate, GetString("TargetDatePicker/Name"));
         AutomationProperties.SetName(TextBoxTitle, GetString("Title/PlaceholderText"));
-        AutomationProperties.SetName(ButtonSet, GetString("ButtonSet/Content"));
 
         UpdateButtonStatus();
     }
 
+    private void UpdateCountdownPreview()
+    {
+        _dateDifference = CountdownLogic.CalculateDaysLeft(_state.TargetDate, DateTimeOffset.Now);
+        TextBlockTitle.Text = _state.Title;
+        TextBlockDays.Text = FormatDaysLeft(_dateDifference);
+    }
+
+    private void UpdateCountdownPreview(CountdownDraft draft)
+    {
+        DateTimeOffset targetDate = draft.TargetDate ?? _state.TargetDate;
+        _dateDifference = CountdownLogic.CalculateDaysLeft(targetDate, DateTimeOffset.Now);
+        TextBlockTitle.Text = draft.Title;
+        TextBlockDays.Text = FormatDaysLeft(_dateDifference);
+    }
+
+    private void TextBlockDays_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        TextBlockDays.FontSize = e.NewSize.Width switch
+        {
+            < 320 => 60,
+            < 370 => 66,
+            _ => 72
+        };
+    }
+
     private void UpdateButtonStatus()
     {
-        DateTimeOffset? selectedDate = DatePickerTargetDate.Date;
-        string draftTitle = TextBoxTitle.Text ?? string.Empty;
-        bool hasChanges =
-            selectedDate.HasValue &&
-            (selectedDate.Value.Date != _targetDate.Date ||
-            draftTitle != _title ||
-            _tileEnabled != _newTileEnabled ||
-            _toastEnabled != _newToastEnabled);
-
-        ButtonSet.IsEnabled =
-            hasChanges &&
-            selectedDate.HasValue &&
-            selectedDate.Value.Date >= DateTimeOffset.Now.Date &&
-            !string.IsNullOrWhiteSpace(draftTitle);
-
-        NotifyButton.Foreground = GetToggleBrush(_newToastEnabled);
-        TileButton.Foreground = GetToggleBrush(_newTileEnabled);
+        bool canCommitDraft = CreateDraftFromControls().CanCommit(DateTimeOffset.Now);
+        NotifyButton.IsEnabled = _state.ToastEnabled || canCommitDraft;
+        TileButton.IsEnabled = _isWindows11OrGreater || _state.TileEnabled || canCommitDraft;
+        NotifyButton.Foreground = GetToggleBrush(_state.ToastEnabled);
+        UpdateGlanceSurfaceStatus();
     }
 
     private Brush GetToggleBrush(bool isEnabled)
     {
         string resourceKey = isEnabled ? "TextFillColorPrimaryBrush" : "TextFillColorDisabledBrush";
 
+        return GetResourceBrush(resourceKey, new SolidColorBrush(isEnabled ? Colors.White : Colors.Gray));
+    }
+
+    private Brush GetResourceBrush(string resourceKey, Brush fallback)
+    {
         if (Application.Current.Resources.TryGetValue(resourceKey, out object resource) && resource is Brush brush)
         {
             return brush;
         }
 
-        return new SolidColorBrush(isEnabled ? Colors.Black : Colors.Gray);
+        return fallback;
     }
 
-    private async Task<bool> EnsureStartupTaskEnabledAsync()
+    private void ConfigureGlanceSurfaceButton()
     {
-        try
-        {
-            StartupTask startupTask = await StartupTask.GetAsync(StartupTaskId);
-            if (startupTask.State == StartupTaskState.Enabled)
-            {
-                return true;
-            }
-
-            StartupTaskState newState = await startupTask.RequestEnableAsync();
-            return newState == StartupTaskState.Enabled || startupTask.State == StartupTaskState.Enabled;
-        }
-        catch
-        {
-            return false;
-        }
+        GlanceSurfaceIcon.FontFamily = new FontFamily(_isWindows11OrGreater ? "Segoe Fluent Icons, Segoe MDL2 Assets" : "Segoe MDL2 Assets");
+        GlanceSurfaceIcon.Glyph = _isWindows11OrGreater ? StartGlyph : TileGlyph;
     }
 
-    private async Task<bool> CheckTileExistsAsync()
+    private void UpdateGlanceSurfaceStatus()
     {
-        try
+        if (!_isWindows11OrGreater)
         {
-            AppListEntry entry = (await Package.Current.GetAppListEntriesAsync())[0];
-            return await Windows.UI.StartScreen.StartScreenManager.GetDefault().ContainsAppListEntryAsync(entry);
+            TileButton.Foreground = GetToggleBrush(_state.TileEnabled);
+            ToolTipService.SetToolTip(TileButton, GetString("TileButton/Tooltip"));
+            AutomationProperties.SetName(TileButton, GetString("TileButton/Tooltip"));
+            AutomationProperties.SetHelpText(TileButton, GetString("TileButton/HelpText"));
+            return;
         }
-        catch
-        {
-            return false;
-        }
+
+        _ = UpdateStartPinStatusAsync();
     }
 
-    private async Task PinTileAsync()
+    private async Task UpdateStartPinStatusAsync()
     {
-        try
+        int version = ++_startPinStatusRequestVersion;
+        bool isPinned = await _startMenuService.IsPinnedAsync();
+
+        if (version != _startPinStatusRequestVersion)
         {
-            AppListEntry entry = (await Package.Current.GetAppListEntriesAsync())[0];
-            await Windows.UI.StartScreen.StartScreenManager.GetDefault().RequestAddAppListEntryAsync(entry);
+            return;
         }
-        catch
-        {
-        }
+
+        string tooltipKey = isPinned ? "StartPinButton/PinnedTooltip" : "StartPinButton/PinTooltip";
+        TileButton.Foreground = GetToggleBrush(isPinned);
+        ToolTipService.SetToolTip(TileButton, GetString(tooltipKey));
+        AutomationProperties.SetName(TileButton, GetString(tooltipKey));
+        AutomationProperties.SetHelpText(TileButton, GetString("StartPinButton/HelpText"));
     }
 
-    private static void ClearTile()
+    private void MainWindow_Activated(object sender, WindowActivatedEventArgs args)
     {
-        try
+        if (_isWindows11OrGreater && args.WindowActivationState != WindowActivationState.Deactivated)
         {
-            TileUpdateManager.CreateTileUpdaterForApplication().Clear();
-        }
-        catch
-        {
+            SyncWidgets();
+            UpdateGlanceSurfaceStatus();
         }
     }
 
-    private async Task UpdateTileAsync(string title, string content)
+    private async Task SaveCountdownAsync()
     {
-        if (!await CheckTileExistsAsync())
+        CountdownDraft draft = CreateDraftFromControls();
+        UpdateCountdownPreview(draft);
+
+        if (!draft.TryCommit(DateTimeOffset.Now, out CountdownState? nextState) || nextState is null)
         {
-            await PinTileAsync();
+            UpdateButtonStatus();
+            return;
         }
 
-        try
-        {
-            string xml = $"""
-                <tile>
-                    <visual branding="name">
-                        <binding template="TileMedium">
-                            <text>{XmlEscape(title)}</text>
-                            <text hint-style="captionSubtle">{XmlEscape(content)}</text>
-                        </binding>
-                        <binding template="TileWide">
-                            <text hint-style="title">{XmlEscape(title)}</text>
-                            <text hint-style="body">{XmlEscape(content)}</text>
-                        </binding>
-                    </visual>
-                </tile>
-                """;
-
-            XmlDocument document = new();
-            document.LoadXml(xml);
-            TileUpdateManager.CreateTileUpdaterForApplication().Update(new TileNotification(document));
-        }
-        catch
-        {
-        }
+        await ApplyCommittedStateAsync(nextState, reconcileStartupTask: false);
     }
 
-    private static void ShowToast(string title, string content)
+    private async Task ApplyCommittedStateAsync(CountdownState state, bool reconcileStartupTask)
     {
-        try
-        {
-            AppNotification notification = new AppNotificationBuilder()
-                .AddText(title)
-                .AddText(content)
-                .BuildNotification();
+        _state = NormalizeStateForCurrentOs(state);
+        UpdateCountdownPreview();
+        _settingsStore.Save(_state);
+        SyncWidgets();
 
-            notification.Tag = NotificationTag;
-            AppNotificationManager.Default.Show(notification);
-        }
-        catch
+        if (!_isWindows11OrGreater)
         {
+            await UpdateLiveTileFromStateAsync();
         }
+
+        if (reconcileStartupTask)
+        {
+            await ReconcileStartupTaskAsync();
+        }
+
+        UpdateButtonStatus();
     }
 
-    private async void ButtonSet_Click(object sender, RoutedEventArgs e)
+    private CountdownDraft CreateDraftFromControls(bool? tileEnabled = null, bool? toastEnabled = null)
     {
-        _targetDate = DatePickerTargetDate.Date ?? DateTimeOffset.Now;
-        _title = TextBoxTitle.Text ?? string.Empty;
-        _tileEnabled = _newTileEnabled;
-        _toastEnabled = _newToastEnabled;
-        SetDisplay();
-        StoreData();
+        return new CountdownDraft(
+            TextBoxTitle.Text ?? string.Empty,
+            DatePickerTargetDate.Date,
+            _isWindows11OrGreater ? false : tileEnabled ?? _state.TileEnabled,
+            toastEnabled ?? _state.ToastEnabled);
+    }
 
-        bool startupEnabled = (!_tileEnabled && !_toastEnabled) || await EnsureStartupTaskEnabledAsync();
-        string daysLeft = FormatString("DaysLeft/Text", _dateDifference.ToString(CultureInfo.CurrentCulture));
+    private async Task ReconcileStartupTaskAsync()
+    {
+        await _startupFeatureService.ReconcileAsync(_state);
+    }
 
-        if (_tileEnabled && startupEnabled)
+    private async Task UpdateLiveTileFromStateAsync()
+    {
+        string daysLeft = FormatDaysLeft(_dateDifference);
+        if (_state.TileEnabled)
         {
-            await UpdateTileAsync(daysLeft, _title);
+            await _startMenuService.UpdateLiveTileAsync(daysLeft, _state.Title);
         }
         else
         {
-            ClearTile();
-        }
-
-        if (_toastEnabled && startupEnabled)
-        {
-            ShowToast(GetString("SuccessNotification/Title"), FormatString("SuccessNotification/Content", _title));
-        }
-        else if (_toastEnabled)
-        {
-            _newToastEnabled = false;
-            _toastEnabled = false;
-            StoreData();
-            UpdateButtonStatus();
-            ShowToast(GetString("CreateStartupTaskFailedNotification/Title"), GetString("CreateStartupTaskFailedNotification/Content"));
+            _startMenuService.ClearLiveTile();
         }
     }
 
-    private void TextBoxTitle_TextChanged(object sender, TextChangedEventArgs e)
+    private void SyncWidgets()
     {
-        UpdateButtonStatus();
+        _widgetSyncService.UpdatePinnedWidgets(_state, DateTimeOffset.Now, CreateDisplayText());
     }
 
-    private void DatePickerTargetDate_SelectedDateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
+    private async void TextBoxTitle_TextChanged(object sender, TextChangedEventArgs e)
     {
-        UpdateButtonStatus();
+        if (!_isUpdatingControls)
+        {
+            await SaveCountdownAsync();
+        }
+    }
+
+    private async void DatePickerTargetDate_SelectedDateChanged(CalendarDatePicker sender, CalendarDatePickerDateChangedEventArgs args)
+    {
+        if (!_isUpdatingControls)
+        {
+            await SaveCountdownAsync();
+        }
     }
 
     private async void TileButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!await CheckTileExistsAsync())
+        if (_isWindows11OrGreater)
         {
-            await PinTileAsync();
+            await _startMenuService.RequestPinAsync();
+            StartPinStatusRefreshLoop();
+            return;
         }
 
-        _newTileEnabled = !_newTileEnabled;
-        UpdateButtonStatus();
+        if (!await _startMenuService.IsPinnedAsync())
+        {
+            await _startMenuService.RequestPinAsync();
+        }
+
+        bool tileEnabled = !_state.TileEnabled;
+        if (!tileEnabled)
+        {
+            await ApplyCommittedStateAsync(_state.With(tileEnabled: false), reconcileStartupTask: true);
+            return;
+        }
+
+        CountdownDraft draft = CreateDraftFromControls(tileEnabled: true);
+        if (!draft.TryCommit(DateTimeOffset.Now, out CountdownState? nextState) || nextState is null)
+        {
+            UpdateCountdownPreview(draft);
+            UpdateButtonStatus();
+            return;
+        }
+
+        if (!await _startupFeatureService.EnsureAvailableForAsync(nextState))
+        {
+            _state = _state.With(tileEnabled: false);
+            _settingsStore.Save(_state);
+            UpdateButtonStatus();
+            _startupNotificationService.ShowToast(
+                GetString("CreateStartupTaskFailedNotification/Title"),
+                GetString("CreateStartupTaskFailedNotification/Content"));
+            return;
+        }
+
+        await ApplyCommittedStateAsync(nextState, reconcileStartupTask: false);
+    }
+
+    private async void StartPinStatusRefreshLoop()
+    {
+        int version = ++_startPinStatusLoopVersion;
+
+        for (int i = 0; i < 20; i++)
+        {
+            if (i > 0)
+            {
+                await Task.Delay(750);
+            }
+
+            if (version != _startPinStatusLoopVersion)
+            {
+                return;
+            }
+
+            await UpdateStartPinStatusAsync();
+        }
     }
 
     private async void NotifyButton_Click(object sender, RoutedEventArgs e)
     {
-        if (!await EnsureStartupTaskEnabledAsync())
+        bool toastEnabled = !_state.ToastEnabled;
+        if (!toastEnabled)
         {
-            ShowToast(GetString("CreateStartupTaskFailedNotification/Title"), GetString("CreateStartupTaskFailedNotification/Content"));
-            _newToastEnabled = false;
-            _toastEnabled = false;
-        }
-        else
-        {
-            _newToastEnabled = !_newToastEnabled;
+            await ApplyCommittedStateAsync(_state.With(toastEnabled: false), reconcileStartupTask: true);
+            return;
         }
 
-        UpdateButtonStatus();
+        CountdownDraft draft = CreateDraftFromControls(toastEnabled: true);
+        if (!draft.TryCommit(DateTimeOffset.Now, out CountdownState? nextState) || nextState is null)
+        {
+            UpdateCountdownPreview(draft);
+            UpdateButtonStatus();
+            return;
+        }
+
+        if (!await _startupFeatureService.EnsureAvailableForAsync(nextState))
+        {
+            _startupNotificationService.ShowToast(
+                GetString("CreateStartupTaskFailedNotification/Title"),
+                GetString("CreateStartupTaskFailedNotification/Content"));
+            UpdateButtonStatus();
+            return;
+        }
+
+        await ApplyCommittedStateAsync(nextState, reconcileStartupTask: false);
     }
 }

@@ -126,9 +126,6 @@
   <data name="MainWindow.Title" xml:space="preserve">
     <value>Date Countdown</value>
   </data>
-  <data name="ButtonSet.Content" xml:space="preserve">
-    <value>Save countdown</value>
-  </data>
   <data name="CreateStartupTaskFailedNotification.Content" xml:space="preserve">
     <value>Please enable startup item at Task Manager manually</value>
   </data>
@@ -139,22 +136,49 @@
     <value>{0:days} days left</value>
     <comment>Aware the space at the beginning</comment>
   </data>
-  <data name="SuccessNotification.Content" xml:space="preserve">
-    <value>{0:title}</value>
+  <data name="DaysLeftOneText" xml:space="preserve">
+    <value>{0} day left</value>
   </data>
-  <data name="SuccessNotification.Title" xml:space="preserve">
-    <value>Countdown saved</value>
+  <data name="DaysLeftManyText" xml:space="preserve">
+    <value>{0} days left</value>
   </data>
   <data name="TargetDatePicker.Name" xml:space="preserve">
     <value>Target date</value>
   </data>
+  <data name="TargetDatePicker.Header" xml:space="preserve">
+    <value>Date</value>
+  </data>
+  <data name="TileButton.HelpText" xml:space="preserve">
+    <value>Toggle Start tile updates. Changes are saved immediately.</value>
+  </data>
+  <data name="TileButton.Content" xml:space="preserve">
+    <value>Start tile</value>
+  </data>
   <data name="TileButton.Tooltip" xml:space="preserve">
-    <value>Show on tile</value>
+    <value>Show countdown on Start tile</value>
+  </data>
+  <data name="StartPinButton.HelpText" xml:space="preserve">
+    <value>Request pinning Date Countdown to Start. Remove it from Start manually.</value>
+  </data>
+  <data name="StartPinButton.PinnedTooltip" xml:space="preserve">
+    <value>Pinned to Start</value>
+  </data>
+  <data name="StartPinButton.PinTooltip" xml:space="preserve">
+    <value>Pin to Start</value>
+  </data>
+  <data name="Title.Header" xml:space="preserve">
+    <value>Title</value>
   </data>
   <data name="Title.PlaceholderText" xml:space="preserve">
     <value>Type a title</value>
   </data>
+  <data name="ToastButton.HelpText" xml:space="preserve">
+    <value>Toggle startup notifications. Changes are saved immediately.</value>
+  </data>
+  <data name="ToastButton.Content" xml:space="preserve">
+    <value>Startup notification</value>
+  </data>
   <data name="ToastButton.Tooltip" xml:space="preserve">
-    <value>Send notificatin at startup</value>
+    <value>Send notification at startup</value>
   </data>
 </root>

@@ -126,9 +126,6 @@
   <data name="MainWindow.Title" xml:space="preserve">
     <value>日期倒计时</value>
   </data>
-  <data name="ButtonSet.Content" xml:space="preserve">
-    <value>保存倒计时</value>
-  </data>
   <data name="CreateStartupTaskFailedNotification.Content" xml:space="preserve">
     <value>请在任务管理器中手动开启启动项</value>
   </data>
@@ -139,21 +136,48 @@
     <value>剩余{0:days}天</value>
     <comment>Aware the space at the beginning</comment>
   </data>
-  <data name="SuccessNotification.Content" xml:space="preserve">
-    <value>{0:title}</value>
+  <data name="DaysLeftOneText" xml:space="preserve">
+    <value>剩余{0}天</value>
   </data>
-  <data name="SuccessNotification.Title" xml:space="preserve">
-    <value>倒计时已保存</value>
+  <data name="DaysLeftManyText" xml:space="preserve">
+    <value>剩余{0}天</value>
   </data>
   <data name="TargetDatePicker.Name" xml:space="preserve">
     <value>目标日期</value>
   </data>
+  <data name="TargetDatePicker.Header" xml:space="preserve">
+    <value>日期</value>
+  </data>
+  <data name="TileButton.HelpText" xml:space="preserve">
+    <value>切换开始屏幕磁贴更新。更改会立即保存。</value>
+  </data>
+  <data name="TileButton.Content" xml:space="preserve">
+    <value>开始磁贴</value>
+  </data>
   <data name="TileButton.Tooltip" xml:space="preserve">
     <value>在磁贴上显示</value>
+  </data>
+  <data name="StartPinButton.HelpText" xml:space="preserve">
+    <value>请求将日期倒计时固定到开始菜单。需要从开始菜单手动移除。</value>
+  </data>
+  <data name="StartPinButton.PinnedTooltip" xml:space="preserve">
+    <value>已固定到开始菜单</value>
+  </data>
+  <data name="StartPinButton.PinTooltip" xml:space="preserve">
+    <value>固定到开始菜单</value>
+  </data>
+  <data name="Title.Header" xml:space="preserve">
+    <value>标题</value>
   </data>
   <data name="Title.PlaceholderText" xml:space="preserve">
     <value>输入事件名</value>
     <comment>Meaning can be adjusted in different languages</comment>
+  </data>
+  <data name="ToastButton.HelpText" xml:space="preserve">
+    <value>切换开机通知。更改会立即保存。</value>
+  </data>
+  <data name="ToastButton.Content" xml:space="preserve">
+    <value>开机通知</value>
   </data>
   <data name="ToastButton.Tooltip" xml:space="preserve">
     <value>开机时推送提醒</value>
