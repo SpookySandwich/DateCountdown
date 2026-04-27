@@ -1,5 +1,7 @@
 # Date Countdown
 
+[![Get it from Microsoft](https://get.microsoft.com/images/en-us%20dark.svg)](https://apps.microsoft.com/detail/9NC4W0X97CWP?hl=en-us&gl=US&ocid=pdpshare)
+
 Date Countdown is a small Windows countdown app built with WinUI 3. It helps you keep track of important dates with a compact desktop interface, optional startup notifications, Windows 10 Start tile updates, and Windows 11 Widgets integration.
 
 <p align="center">
