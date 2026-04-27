@@ -16,6 +16,7 @@
 
         <Grid
             x:Name="AppTitleBar"
+            Grid.Row="0"
             Background="Transparent" />
 
         <Grid
@@ -49,7 +50,13 @@
                         x:Name="CountdownSelectorItems"
                         HorizontalAlignment="Center"
                         Orientation="Horizontal"
-                        Spacing="18" />
+                        Spacing="18">
+                        <StackPanel.ChildrenTransitions>
+                            <TransitionCollection>
+                                <RepositionThemeTransition />
+                            </TransitionCollection>
+                        </StackPanel.ChildrenTransitions>
+                    </StackPanel>
                 </Grid>
             </ScrollViewer>
         </Grid>
@@ -78,14 +85,14 @@
                     <TextBlock
                         x:Name="TextBlockDays"
                         x:Uid="DaysLeft"
-                        MaxWidth="420"
+                        MaxWidth="560"
                         MinWidth="296"
                         AutomationProperties.AccessibilityView="Content"
                         AutomationProperties.LiveSetting="Polite"
                         FontFamily="Segoe UI Variable Display, Segoe UI"
                         FontSize="72"
                         FontWeight="Light"
-                        SizeChanged="TextBlockDays_SizeChanged"
+                        HorizontalAlignment="Center"
                         TextAlignment="Center"
                         TextTrimming="CharacterEllipsis"
                         TextWrapping="NoWrap" />
@@ -199,21 +206,33 @@
                                 Glyph="&#xE710;" />
                         </Button>
                         <Button
-                            x:Name="SettingsButton"
+                            x:Name="MoreButton"
                             Width="40"
                             Height="40"
                             Padding="0"
-                            AutomationProperties.AutomationId="SettingsButton"
+                            AutomationProperties.AutomationId="MoreButton"
                             Background="Transparent"
-                            BorderThickness="0"
-                            Click="SettingsButton_Click">
+                            BorderThickness="0">
                             <Button.RenderTransform>
                                 <TranslateTransform />
                             </Button.RenderTransform>
+                            <Button.Flyout>
+                                <MenuFlyout>
+                                    <MenuFlyoutItem
+                                        x:Name="SettingsMenuItem"
+                                        Click="SettingsMenuItem_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon
+                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                Glyph="&#xE713;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                </MenuFlyout>
+                            </Button.Flyout>
                             <FontIcon
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                 FontSize="16"
-                                Glyph="&#xE713;" />
+                                Glyph="&#xE712;" />
                         </Button>
                     </StackPanel>
                 </StackPanel>
@@ -227,12 +246,15 @@
             Padding="18,4,18,32"
             HorizontalScrollBarVisibility="Disabled"
             HorizontalScrollMode="Disabled"
+            SizeChanged="SettingsContentScroller_SizeChanged"
             VerticalScrollBarVisibility="Auto"
             VerticalScrollMode="Auto"
             Visibility="Collapsed">
             <StackPanel
+                x:Name="SettingsContentPanel"
                 MaxWidth="640"
-                HorizontalAlignment="Stretch"
+                MinWidth="360"
+                HorizontalAlignment="Center"
                 Spacing="28">
                 <StackPanel
                     Spacing="16">
@@ -278,17 +300,15 @@
                                     Grid.Column="0"
                                     FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                     FontSize="18"
-                                    Glyph="&#xE8CB;" />
+                                    Glyph="&#xE8CB;"
+                                    VerticalAlignment="Center" />
                                 <StackPanel
                                     Grid.Column="1"
+                                    VerticalAlignment="Center"
                                     Spacing="2">
                                     <TextBlock
                                         x:Name="SortCountdownsTitleText"
                                         FontWeight="SemiBold" />
-                                    <TextBlock
-                                        x:Name="SortCountdownsDescriptionText"
-                                        Opacity="0.72"
-                                        TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch
                                     x:Name="SortCountdownsToggle"
@@ -307,43 +327,98 @@
                             x:Name="SettingsAppearanceHeaderText"
                             FontSize="14"
                             FontWeight="SemiBold" />
-                        <Border
-                            Background="{ThemeResource ControlFillColorDefaultBrush}"
-                            CornerRadius="6">
-                            <Grid Padding="16">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="40" />
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="Auto" />
-                                </Grid.ColumnDefinitions>
-                                <FontIcon
-                                    Grid.Column="0"
-                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                    FontSize="18"
-                                    Glyph="&#xE790;" />
-                                <StackPanel
-                                    Grid.Column="1"
-                                    Spacing="2">
+                        <Expander
+                            x:Name="TextSizeExpander"
+                            HorizontalAlignment="Stretch"
+                            IsExpanded="False">
+                            <Expander.Header>
+                                <Grid MinHeight="56">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon
+                                        Grid.Column="0"
+                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                        FontSize="18"
+                                        Glyph="&#xE790;"
+                                        VerticalAlignment="Center" />
                                     <TextBlock
-                                        x:Name="DisplaySizeTitleText"
+                                        x:Name="TextSizeTitleText"
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold" />
+                                </Grid>
+                            </Expander.Header>
+                            <StackPanel
+                                Padding="56,0,16,18"
+                                Spacing="14">
+                                <Border
+                                    Padding="16"
+                                    Background="{ThemeResource ControlFillColorSecondaryBrush}"
+                                    CornerRadius="6">
+                                    <StackPanel
+                                        HorizontalAlignment="Stretch"
+                                        Spacing="4">
+                                        <TextBlock
+                                            x:Name="SettingsPreviewDaysText"
+                                            MaxWidth="520"
+                                            HorizontalAlignment="Center"
+                                            FontFamily="Segoe UI Variable Display, Segoe UI"
+                                            FontWeight="Light"
+                                            TextAlignment="Center"
+                                            TextTrimming="CharacterEllipsis"
+                                            TextWrapping="NoWrap" />
+                                        <TextBlock
+                                            x:Name="SettingsPreviewTitleText"
+                                            HorizontalAlignment="Center"
+                                            FontWeight="SemiBold"
+                                            Opacity="0.88"
+                                            TextAlignment="Center"
+                                            TextTrimming="CharacterEllipsis"
+                                            TextWrapping="WrapWholeWords" />
+                                    </StackPanel>
+                                </Border>
+
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        x:Name="DaysTextSizeLabelText"
                                         FontWeight="SemiBold" />
                                     <TextBlock
-                                        x:Name="DisplaySizeDescriptionText"
-                                        Opacity="0.72"
-                                        TextWrapping="Wrap" />
-                                </StackPanel>
-                                <ComboBox
-                                    x:Name="DisplaySizeComboBox"
-                                    Grid.Column="2"
-                                    MinWidth="132"
-                                    Margin="16,0,0,0"
-                                    SelectionChanged="DisplaySizeComboBox_SelectionChanged">
-                                    <ComboBoxItem Tag="Compact" />
-                                    <ComboBoxItem Tag="Default" />
-                                    <ComboBoxItem Tag="Large" />
-                                </ComboBox>
-                            </Grid>
-                        </Border>
+                                        x:Name="DaysTextSizeValueText"
+                                        Grid.Column="1"
+                                        Opacity="0.72" />
+                                </Grid>
+                                <Slider
+                                    x:Name="DaysTextSizeSlider"
+                                    SmallChange="1"
+                                    StepFrequency="1"
+                                    ValueChanged="DaysTextSizeSlider_ValueChanged" />
+
+                                <Grid ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        x:Name="TitleTextSizeLabelText"
+                                        FontWeight="SemiBold" />
+                                    <TextBlock
+                                        x:Name="TitleTextSizeValueText"
+                                        Grid.Column="1"
+                                        Opacity="0.72" />
+                                </Grid>
+                                <Slider
+                                    x:Name="TitleTextSizeSlider"
+                                    SmallChange="1"
+                                    StepFrequency="1"
+                                    ValueChanged="TitleTextSizeSlider_ValueChanged" />
+                            </StackPanel>
+                        </Expander>
                     </StackPanel>
 
                     <StackPanel Spacing="8">
@@ -364,17 +439,15 @@
                                     Grid.Column="0"
                                     FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                     FontSize="18"
-                                    Glyph="&#xE8FB;" />
+                                    Glyph="&#xE8FB;"
+                                    VerticalAlignment="Center" />
                                 <StackPanel
                                     Grid.Column="1"
+                                    VerticalAlignment="Center"
                                     Spacing="2">
                                     <TextBlock
                                         x:Name="OpenAtStartupTitleText"
                                         FontWeight="SemiBold" />
-                                    <TextBlock
-                                        x:Name="OpenAtStartupDescriptionText"
-                                        Opacity="0.72"
-                                        TextWrapping="Wrap" />
                                 </StackPanel>
                                 <ToggleSwitch
                                     x:Name="OpenAtStartupToggle"
@@ -406,17 +479,15 @@
                                     Grid.Column="0"
                                     Width="20"
                                     Height="20"
+                                    VerticalAlignment="Center"
                                     Source="Assets/Square44x44Logo.targetsize-24.png" />
                                 <StackPanel
                                     Grid.Column="1"
+                                    VerticalAlignment="Center"
                                     Spacing="2">
                                     <TextBlock
                                         x:Name="AboutAppNameText"
                                         FontWeight="SemiBold" />
-                                    <TextBlock
-                                        x:Name="AboutDescriptionText"
-                                        Opacity="0.72"
-                                        TextWrapping="Wrap" />
                                 </StackPanel>
                                 <TextBlock
                                     x:Name="AboutVersionText"

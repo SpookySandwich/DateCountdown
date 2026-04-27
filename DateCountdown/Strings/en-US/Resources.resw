@@ -208,6 +208,15 @@
   <data name="ToastButton.Tooltip" xml:space="preserve">
     <value>Send notification on startup</value>
   </data>
+  <data name="MoreButton.HelpText" xml:space="preserve">
+    <value>Open more app commands.</value>
+  </data>
+  <data name="MoreButton.Tooltip" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="SettingsMenuItem.Text" xml:space="preserve">
+    <value>Settings</value>
+  </data>
   <data name="SettingsButton.HelpText" xml:space="preserve">
     <value>Open app settings for sorting, display size, and startup behavior.</value>
   </data>
@@ -224,13 +233,25 @@
     <value>Countdowns</value>
   </data>
   <data name="Settings.SortCountdownsTitle" xml:space="preserve">
-    <value>Sort countdowns</value>
+    <value>Sort countdowns by days remaining</value>
   </data>
   <data name="Settings.SortCountdownsDescription" xml:space="preserve">
     <value>Show soonest dates first.</value>
   </data>
   <data name="Settings.AppearanceHeader" xml:space="preserve">
     <value>Appearance</value>
+  </data>
+  <data name="Settings.TextSizeTitle" xml:space="preserve">
+    <value>Text size</value>
+  </data>
+  <data name="Settings.TextSizeDescription" xml:space="preserve">
+    <value>Adjust the countdown and event title text sizes.</value>
+  </data>
+  <data name="Settings.DaysTextSizeLabel" xml:space="preserve">
+    <value>Countdown text</value>
+  </data>
+  <data name="Settings.TitleTextSizeLabel" xml:space="preserve">
+    <value>Event title</value>
   </data>
   <data name="Settings.DisplaySizeTitle" xml:space="preserve">
     <value>Display size</value>
@@ -263,7 +284,7 @@
     <value>Date Countdown</value>
   </data>
   <data name="Settings.SourceCodeLink" xml:space="preserve">
-    <value>Source code on GitHub</value>
+    <value>Star on GitHub</value>
   </data>
   <data name="WidgetButton.HelpText" xml:space="preserve">
     <value>Show steps to pin the Date Countdown widget.</value>

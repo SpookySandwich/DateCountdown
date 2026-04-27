@@ -10,6 +10,8 @@ namespace DateCountdown.Core
         public const string SelectedCountdownId = "selectedCountdownId";
         public const string SortCountdownsByDaysLeft = "sortCountdownsByDaysLeft";
         public const string DisplaySize = "displaySize";
+        public const string DaysTextSize = "daysTextSize";
+        public const string TitleTextSize = "titleTextSize";
         public const string OpenWindowAtStartup = "openWindowAtStartup";
     }
 }

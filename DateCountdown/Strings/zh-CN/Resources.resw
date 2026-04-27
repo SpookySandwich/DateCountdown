@@ -209,6 +209,15 @@
   <data name="ToastButton.Tooltip" xml:space="preserve">
     <value>开机时推送提醒</value>
   </data>
+  <data name="MoreButton.HelpText" xml:space="preserve">
+    <value>打开更多应用命令。</value>
+  </data>
+  <data name="MoreButton.Tooltip" xml:space="preserve">
+    <value>更多</value>
+  </data>
+  <data name="SettingsMenuItem.Text" xml:space="preserve">
+    <value>设置</value>
+  </data>
   <data name="SettingsButton.HelpText" xml:space="preserve">
     <value>打开排序、显示大小和启动行为设置。</value>
   </data>
@@ -225,13 +234,25 @@
     <value>倒计时</value>
   </data>
   <data name="Settings.SortCountdownsTitle" xml:space="preserve">
-    <value>排序倒计时</value>
+    <value>按剩余天数排序倒计时</value>
   </data>
   <data name="Settings.SortCountdownsDescription" xml:space="preserve">
     <value>优先显示最近的日期。</value>
   </data>
   <data name="Settings.AppearanceHeader" xml:space="preserve">
     <value>外观</value>
+  </data>
+  <data name="Settings.TextSizeTitle" xml:space="preserve">
+    <value>文字大小</value>
+  </data>
+  <data name="Settings.TextSizeDescription" xml:space="preserve">
+    <value>调整倒计时和事件标题的文字大小。</value>
+  </data>
+  <data name="Settings.DaysTextSizeLabel" xml:space="preserve">
+    <value>倒计时文字</value>
+  </data>
+  <data name="Settings.TitleTextSizeLabel" xml:space="preserve">
+    <value>事件标题</value>
   </data>
   <data name="Settings.DisplaySizeTitle" xml:space="preserve">
     <value>显示大小</value>
@@ -264,7 +285,7 @@
     <value>日期倒计时</value>
   </data>
   <data name="Settings.SourceCodeLink" xml:space="preserve">
-    <value>GitHub 上的源代码</value>
+    <value>GitHub上加star</value>
   </data>
   <data name="WidgetButton.HelpText" xml:space="preserve">
     <value>显示固定日期倒计时小组件的步骤。</value>

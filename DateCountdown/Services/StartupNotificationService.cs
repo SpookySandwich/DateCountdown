@@ -1,6 +1,8 @@
 using Microsoft.Windows.AppNotifications;
 using Microsoft.Windows.AppNotifications.Builder;
 using System;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
 
@@ -8,7 +10,8 @@ namespace DateCountdown.Services;
 
 internal sealed class StartupNotificationService
 {
-    private const string NotificationTag = "tag";
+    private const string StatusNotificationTag = "status";
+    private const string StartupNotificationGroup = "startup";
     private const string StartupTaskId = "DateCountdownStartupId";
 
     public async Task<bool> EnsureStartupTaskEnabledAsync()
@@ -45,7 +48,23 @@ internal sealed class StartupNotificationService
         }
     }
 
-    public void ShowToast(string title, string content)
+    public void ShowStatusToast(string title, string content)
+    {
+        ShowToast(title, content, StatusNotificationTag, group: string.Empty);
+    }
+
+    public void ShowStartupCountdownToast(string countdownId, string title, string content)
+    {
+        ShowToast(title, content, CreateCountdownNotificationTag(countdownId), StartupNotificationGroup);
+    }
+
+    private static string CreateCountdownNotificationTag(string countdownId)
+    {
+        byte[] hash = SHA256.HashData(Encoding.UTF8.GetBytes(countdownId));
+        return Convert.ToHexString(hash, 0, 8);
+    }
+
+    private static void ShowToast(string title, string content, string tag, string group)
     {
         try
         {
@@ -54,7 +73,8 @@ internal sealed class StartupNotificationService
                 .AddText(content)
                 .BuildNotification();
 
-            notification.Tag = NotificationTag;
+            notification.Tag = tag;
+            notification.Group = group;
             AppNotificationManager.Default.Show(notification);
         }
         catch

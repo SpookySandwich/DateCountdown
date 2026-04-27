@@ -1,6 +1,7 @@
 using DateCountdown.Core;
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using Windows.Storage;
 
 namespace DateCountdown.Services;
@@ -48,21 +49,40 @@ internal sealed class CountdownSettingsStore
 
     public CountdownPreferences LoadPreferences()
     {
+        (double legacyDaysTextSize, double legacyTitleTextSize) = CountdownPreferences.GetLegacyTextSizes(
+            CountdownPreferences.ParseDisplaySize(_localSettings.Values[CountdownSettingsKeys.DisplaySize]));
+
         return new CountdownPreferences(
             ReadBool(CountdownSettingsKeys.SortCountdownsByDaysLeft),
-            CountdownPreferences.ParseDisplaySize(_localSettings.Values[CountdownSettingsKeys.DisplaySize]),
+            ReadDouble(CountdownSettingsKeys.DaysTextSize) ?? legacyDaysTextSize,
+            ReadDouble(CountdownSettingsKeys.TitleTextSize) ?? legacyTitleTextSize,
             ReadBool(CountdownSettingsKeys.OpenWindowAtStartup));
     }
 
     public void SavePreferences(CountdownPreferences preferences)
     {
         _localSettings.Values[CountdownSettingsKeys.SortCountdownsByDaysLeft] = preferences.SortCountdownsByDaysLeft;
-        _localSettings.Values[CountdownSettingsKeys.DisplaySize] = preferences.DisplaySize.ToString();
+        _localSettings.Values[CountdownSettingsKeys.DaysTextSize] = preferences.DaysTextSize;
+        _localSettings.Values[CountdownSettingsKeys.TitleTextSize] = preferences.TitleTextSize;
         _localSettings.Values[CountdownSettingsKeys.OpenWindowAtStartup] = preferences.OpenWindowAtStartup;
     }
 
     private bool ReadBool(string key)
     {
         return _localSettings.Values[key] is bool value && value;
+    }
+
+    private double? ReadDouble(string key)
+    {
+        object? value = _localSettings.Values[key];
+        return value switch
+        {
+            double doubleValue => doubleValue,
+            float floatValue => floatValue,
+            int intValue => intValue,
+            long longValue => longValue,
+            string text when double.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out double parsedValue) => parsedValue,
+            _ => null
+        };
     }
 }

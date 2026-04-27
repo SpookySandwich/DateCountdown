@@ -47,7 +47,7 @@ public sealed partial class MainWindow : Window
     private bool _isMotionReady;
     private bool _isSettingsVisible;
     private bool _isUpdatingControls;
-    private bool _isUpdatingSettingsControls;
+    private bool _isUpdatingSettingsControls = true;
     private DateTimeOffset _lastCountdownSelectorDragAt = DateTimeOffset.MinValue;
     private Storyboard? _mainContentOffsetStoryboard;
     private Storyboard? _countdownSelectorVisibilityStoryboard;
@@ -60,6 +60,7 @@ public sealed partial class MainWindow : Window
         _startupFeatureService = new StartupFeatureService(!_isWindows11OrGreater, _startupNotificationService);
 
         InitializeComponent();
+        _isUpdatingSettingsControls = false;
 
         _windowChromeService.Initialize(this, AppTitleBar, GetString("AppName"), _isWindows11OrGreater);
         Activated += MainWindow_Activated;
@@ -127,21 +128,21 @@ public sealed partial class MainWindow : Window
         string toastTooltip = GetString("ToastButton/Tooltip");
         string addTooltip = GetString("AddCountdownButton/Tooltip");
         string deleteTooltip = GetString("DeleteCountdownButton/Tooltip");
-        string settingsTooltip = GetString("SettingsButton/Tooltip");
+        string moreTooltip = GetString("MoreButton/Tooltip");
 
         ConfigureGlanceSurfaceButton();
         ToolTipService.SetToolTip(NotifyButton, toastTooltip);
         ToolTipService.SetToolTip(AddButton, addTooltip);
         ToolTipService.SetToolTip(DeleteButton, deleteTooltip);
-        ToolTipService.SetToolTip(SettingsButton, settingsTooltip);
+        ToolTipService.SetToolTip(MoreButton, moreTooltip);
         AutomationProperties.SetName(NotifyButton, toastTooltip);
         AutomationProperties.SetName(AddButton, addTooltip);
         AutomationProperties.SetName(DeleteButton, deleteTooltip);
-        AutomationProperties.SetName(SettingsButton, settingsTooltip);
+        AutomationProperties.SetName(MoreButton, moreTooltip);
         AutomationProperties.SetHelpText(NotifyButton, GetString("ToastButton/HelpText"));
         AutomationProperties.SetHelpText(AddButton, GetString("AddCountdownButton/HelpText"));
         AutomationProperties.SetHelpText(DeleteButton, GetString("DeleteCountdownButton/HelpText"));
-        AutomationProperties.SetHelpText(SettingsButton, GetString("SettingsButton/HelpText"));
+        AutomationProperties.SetHelpText(MoreButton, GetString("MoreButton/HelpText"));
         AutomationProperties.SetName(CountdownSelectorRail, GetString("CountdownSelector/Name"));
         AutomationProperties.SetName(DatePickerTargetDate, GetString("TargetDatePicker/Name"));
         AutomationProperties.SetName(TextBoxTitle, GetString("Title/PlaceholderText"));
@@ -162,43 +163,30 @@ public sealed partial class MainWindow : Window
         SettingsStartupHeaderText.Text = GetString("Settings/StartupHeader");
         SettingsAboutHeaderText.Text = GetString("Settings/AboutHeader");
 
+        SettingsMenuItem.Text = GetString("SettingsMenuItem/Text");
         SortCountdownsTitleText.Text = GetString("Settings/SortCountdownsTitle");
-        SortCountdownsDescriptionText.Text = GetString("Settings/SortCountdownsDescription");
-        DisplaySizeTitleText.Text = GetString("Settings/DisplaySizeTitle");
-        DisplaySizeDescriptionText.Text = GetString("Settings/DisplaySizeDescription");
+        TextSizeTitleText.Text = GetString("Settings/TextSizeTitle");
+        DaysTextSizeLabelText.Text = GetString("Settings/DaysTextSizeLabel");
+        TitleTextSizeLabelText.Text = GetString("Settings/TitleTextSizeLabel");
         OpenAtStartupTitleText.Text = GetString("Settings/OpenAtStartupTitle");
-        OpenAtStartupDescriptionText.Text = GetString("Settings/OpenAtStartupDescription");
         AboutAppNameText.Text = GetString("AppName");
-        AboutDescriptionText.Text = GetString("Settings/AboutDescription");
         AboutVersionText.Text = GetAppVersion();
         SourceCodeLinkButton.Content = GetString("Settings/SourceCodeLink");
 
         AutomationProperties.SetName(SortCountdownsToggle, SortCountdownsTitleText.Text);
-        AutomationProperties.SetHelpText(SortCountdownsToggle, SortCountdownsDescriptionText.Text);
-        AutomationProperties.SetName(DisplaySizeComboBox, DisplaySizeTitleText.Text);
-        AutomationProperties.SetHelpText(DisplaySizeComboBox, DisplaySizeDescriptionText.Text);
+        AutomationProperties.SetHelpText(SortCountdownsToggle, GetString("Settings/SortCountdownsDescription"));
+        AutomationProperties.SetName(TextSizeExpander, TextSizeTitleText.Text);
+        AutomationProperties.SetHelpText(TextSizeExpander, GetString("Settings/TextSizeDescription"));
+        AutomationProperties.SetName(DaysTextSizeSlider, DaysTextSizeLabelText.Text);
+        AutomationProperties.SetName(TitleTextSizeSlider, TitleTextSizeLabelText.Text);
         AutomationProperties.SetName(OpenAtStartupToggle, OpenAtStartupTitleText.Text);
-        AutomationProperties.SetHelpText(OpenAtStartupToggle, OpenAtStartupDescriptionText.Text);
+        AutomationProperties.SetHelpText(OpenAtStartupToggle, GetString("Settings/OpenAtStartupDescription"));
         AutomationProperties.SetName(SourceCodeLinkButton, GetString("Settings/SourceCodeLink"));
 
-        SetDisplaySizeComboBoxItemText(CountdownDisplaySize.Compact, GetString("Settings/DisplaySizeCompact"));
-        SetDisplaySizeComboBoxItemText(CountdownDisplaySize.Default, GetString("Settings/DisplaySizeDefault"));
-        SetDisplaySizeComboBoxItemText(CountdownDisplaySize.Large, GetString("Settings/DisplaySizeLarge"));
-    }
-
-    private void SetDisplaySizeComboBoxItemText(CountdownDisplaySize displaySize, string text)
-    {
-        foreach (object item in DisplaySizeComboBox.Items)
-        {
-            if (item is ComboBoxItem comboBoxItem &&
-                comboBoxItem.Tag is string tag &&
-                Enum.TryParse(tag, out CountdownDisplaySize itemDisplaySize) &&
-                itemDisplaySize == displaySize)
-            {
-                comboBoxItem.Content = text;
-                return;
-            }
-        }
+        DaysTextSizeSlider.Minimum = CountdownPreferences.MinDaysTextSize;
+        DaysTextSizeSlider.Maximum = CountdownPreferences.MaxDaysTextSize;
+        TitleTextSizeSlider.Minimum = CountdownPreferences.MinTitleTextSize;
+        TitleTextSizeSlider.Maximum = CountdownPreferences.MaxTitleTextSize;
     }
 
     private void UpdateSettingsControls()
@@ -208,7 +196,9 @@ public sealed partial class MainWindow : Window
         {
             SortCountdownsToggle.IsOn = _preferences.SortCountdownsByDaysLeft;
             OpenAtStartupToggle.IsOn = _preferences.OpenWindowAtStartup;
-            SelectDisplaySizeComboBoxItem(_preferences.DisplaySize);
+            DaysTextSizeSlider.Value = _preferences.DaysTextSize;
+            TitleTextSizeSlider.Value = _preferences.TitleTextSize;
+            UpdateTextSizeValueText();
         }
         finally
         {
@@ -216,21 +206,9 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void SelectDisplaySizeComboBoxItem(CountdownDisplaySize displaySize)
+    private void SettingsContentScroller_SizeChanged(object sender, SizeChangedEventArgs e)
     {
-        foreach (object item in DisplaySizeComboBox.Items)
-        {
-            if (item is ComboBoxItem comboBoxItem &&
-                comboBoxItem.Tag is string tag &&
-                Enum.TryParse(tag, out CountdownDisplaySize itemDisplaySize) &&
-                itemDisplaySize == displaySize)
-            {
-                DisplaySizeComboBox.SelectedItem = comboBoxItem;
-                return;
-            }
-        }
-
-        DisplaySizeComboBox.SelectedIndex = 1;
+        SettingsContentPanel.Width = Math.Min(640, Math.Max(360, e.NewSize.Width - 36));
     }
 
     private static string GetAppVersion()
@@ -248,35 +226,12 @@ public sealed partial class MainWindow : Window
 
     private void ApplyDisplaySizePreference()
     {
-        TextBlockDays.FontSize = GetPreferredDaysFontSize();
-        TextBlockTitle.FontSize = _preferences.DisplaySize switch
-        {
-            CountdownDisplaySize.Compact => 13,
-            CountdownDisplaySize.Large => 16,
-            _ => 14
-        };
-        MainContentPanel.MaxWidth = _preferences.DisplaySize switch
-        {
-            CountdownDisplaySize.Compact => 360,
-            CountdownDisplaySize.Large => 430,
-            _ => 390
-        };
-        MainContentPanel.Spacing = _preferences.DisplaySize switch
-        {
-            CountdownDisplaySize.Compact => 22,
-            CountdownDisplaySize.Large => 30,
-            _ => 26
-        };
-    }
-
-    private double GetPreferredDaysFontSize()
-    {
-        return _preferences.DisplaySize switch
-        {
-            CountdownDisplaySize.Compact => 60,
-            CountdownDisplaySize.Large => 84,
-            _ => 72
-        };
+        TextBlockDays.FontSize = _preferences.DaysTextSize;
+        TextBlockTitle.FontSize = _preferences.TitleTextSize;
+        MainContentPanel.MaxWidth = Math.Clamp(_preferences.DaysTextSize * 5.4, 360, 560);
+        MainContentPanel.Spacing = Math.Clamp(_preferences.TitleTextSize + 12, 24, 34);
+        UpdateSettingsPreview();
+        UpdateTextSizeValueText();
     }
 
     private void UpdateEditorFromState()
@@ -286,7 +241,10 @@ public sealed partial class MainWindow : Window
         TextBoxTitle.PlaceholderText = GetString("Title/PlaceholderText");
         TextBoxTitle.MaxLength = CountdownItem.MaxTitleLength;
         TextBoxTitle.Text = _state.Title;
-        DatePickerTargetDate.MinDate = DateTimeOffset.Now.Date;
+        DateTimeOffset today = DateTimeOffset.Now.Date;
+        DatePickerTargetDate.MinDate = _state.TargetDate.Date < today.Date
+            ? _state.TargetDate.Date
+            : today;
         DatePickerTargetDate.Date = _state.TargetDate;
     }
 
@@ -295,6 +253,7 @@ public sealed partial class MainWindow : Window
         _dateDifference = CountdownLogic.CalculateDaysLeft(_state.TargetDate, DateTimeOffset.Now);
         TextBlockTitle.Text = _state.Title;
         TextBlockDays.Text = FormatDaysLeft(_dateDifference);
+        UpdateSettingsPreview();
     }
 
     private void UpdateCountdownPreview(CountdownDraft draft)
@@ -303,17 +262,33 @@ public sealed partial class MainWindow : Window
         _dateDifference = CountdownLogic.CalculateDaysLeft(targetDate, DateTimeOffset.Now);
         TextBlockTitle.Text = draft.Title;
         TextBlockDays.Text = FormatDaysLeft(_dateDifference);
+        UpdateSettingsPreview();
     }
 
-    private void TextBlockDays_SizeChanged(object sender, SizeChangedEventArgs e)
+    private void UpdateSettingsPreview()
     {
-        double preferredFontSize = GetPreferredDaysFontSize();
-        TextBlockDays.FontSize = e.NewSize.Width switch
+        if (SettingsPreviewDaysText is null || SettingsPreviewTitleText is null)
         {
-            < 320 => Math.Min(preferredFontSize, 60),
-            < 370 => Math.Min(preferredFontSize, 66),
-            _ => preferredFontSize
-        };
+            return;
+        }
+
+        SettingsPreviewDaysText.Text = FormatDaysLeft(_dateDifference);
+        SettingsPreviewDaysText.FontSize = _preferences.DaysTextSize;
+        SettingsPreviewTitleText.Text = string.IsNullOrWhiteSpace(_state.Title)
+            ? GetString("Title/PlaceholderText")
+            : _state.Title;
+        SettingsPreviewTitleText.FontSize = _preferences.TitleTextSize;
+    }
+
+    private void UpdateTextSizeValueText()
+    {
+        if (DaysTextSizeValueText is null || TitleTextSizeValueText is null)
+        {
+            return;
+        }
+
+        DaysTextSizeValueText.Text = string.Format(CultureInfo.CurrentCulture, "{0:0}", _preferences.DaysTextSize);
+        TitleTextSizeValueText.Text = string.Format(CultureInfo.CurrentCulture, "{0:0}", _preferences.TitleTextSize);
     }
 
     private void UpdateButtonStatus()
@@ -331,7 +306,7 @@ public sealed partial class MainWindow : Window
     {
         if (_isSettingsVisible)
         {
-            HideCountdownSelectorImmediately(clearItems: false);
+            HideCountdownSelectorImmediately(clearItems: true);
             return;
         }
 
@@ -345,22 +320,9 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            CountdownSelectorItems.Children.Clear();
             UpdateCountdownSelectorContentWidth();
-
-            for (int i = 0; i < _state.Countdowns.Count; i++)
-            {
-                CountdownItem countdown = _state.Countdowns[i];
-                bool isSelected = string.Equals(countdown.Id, _state.SelectedCountdownId, StringComparison.Ordinal);
-                FrameworkElement item = CreateCountdownSelectorItem(countdown, i, isSelected);
-
-                CountdownSelectorItems.Children.Add(item);
-                if (isSelected)
-                {
-                    BringSelectedCountdownIntoView();
-                }
-            }
-
+            UpdateCountdownSelectorItems();
+            BringSelectedCountdownIntoView();
             SetCountdownSelectorVisible(true);
         }
         finally
@@ -630,7 +592,7 @@ public sealed partial class MainWindow : Window
 
     private IReadOnlyList<Button> GetToolbarButtons()
     {
-        return new[] { NotifyButton, TileButton, DeleteButton, AddButton, SettingsButton };
+        return new[] { NotifyButton, TileButton, DeleteButton, AddButton, MoreButton };
     }
 
     private static TranslateTransform EnsureButtonTranslateTransform(Button button)
@@ -659,6 +621,26 @@ public sealed partial class MainWindow : Window
         Storyboard storyboard = new();
         storyboard.Children.Add(animation);
         return storyboard;
+    }
+
+    private Task AnimateCountdownSelectorItemRemovalAsync(string countdownId)
+    {
+        if (!_isMotionReady || !_animationsEnabled)
+        {
+            return Task.CompletedTask;
+        }
+
+        FrameworkElement? item = FindCountdownSelectorItem(countdownId);
+        if (item is null || item.Visibility != Visibility.Visible)
+        {
+            return Task.CompletedTask;
+        }
+
+        TaskCompletionSource completion = new();
+        Storyboard storyboard = CreateOpacityStoryboard(item, 0);
+        storyboard.Completed += (_, _) => completion.TrySetResult();
+        storyboard.Begin();
+        return completion.Task;
     }
 
     private FrameworkElement CreateCountdownSelectorItem(CountdownItem countdown, int index, bool isSelected)
@@ -712,6 +694,83 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(item, text);
 
         return item;
+    }
+
+    private void UpdateCountdownSelectorItems()
+    {
+        Dictionary<string, Border> existingItems = new(StringComparer.Ordinal);
+        foreach (UIElement child in CountdownSelectorItems.Children)
+        {
+            if (child is Border item && item.Tag is string countdownId)
+            {
+                existingItems[countdownId] = item;
+            }
+        }
+
+        List<UIElement> orderedItems = new();
+        for (int i = 0; i < _state.Countdowns.Count; i++)
+        {
+            CountdownItem countdown = _state.Countdowns[i];
+            bool isSelected = string.Equals(countdown.Id, _state.SelectedCountdownId, StringComparison.Ordinal);
+            Border item = existingItems.TryGetValue(countdown.Id, out Border? existingItem)
+                ? existingItem
+                : (Border)CreateCountdownSelectorItem(countdown, i, isSelected);
+
+            UpdateCountdownSelectorItem(item, countdown, i, isSelected);
+            orderedItems.Add(item);
+        }
+
+        HashSet<UIElement> orderedSet = new(orderedItems);
+        for (int i = CountdownSelectorItems.Children.Count - 1; i >= 0; i--)
+        {
+            if (!orderedSet.Contains(CountdownSelectorItems.Children[i]))
+            {
+                CountdownSelectorItems.Children.RemoveAt(i);
+            }
+        }
+
+        for (int i = 0; i < orderedItems.Count; i++)
+        {
+            UIElement item = orderedItems[i];
+            int currentIndex = CountdownSelectorItems.Children.IndexOf(item);
+            if (currentIndex == i)
+            {
+                continue;
+            }
+
+            if (currentIndex >= 0)
+            {
+                CountdownSelectorItems.Children.RemoveAt(currentIndex);
+            }
+
+            CountdownSelectorItems.Children.Insert(i, item);
+        }
+    }
+
+    private void UpdateCountdownSelectorItem(Border item, CountdownItem countdown, int index, bool isSelected)
+    {
+        string text = GetCountdownSelectorText(countdown, index);
+        item.Tag = countdown.Id;
+        AutomationProperties.SetName(item, text);
+
+        if (item.Child is not StackPanel content || content.Children.Count < 2)
+        {
+            return;
+        }
+
+        if (content.Children[0] is TextBlock label)
+        {
+            label.Text = text;
+        }
+
+        if (content.Children[1] is Border indicator)
+        {
+            indicator.Background = isSelected
+                ? GetResourceBrush("AccentFillColorDefaultBrush", new SolidColorBrush(Colors.DeepSkyBlue))
+                : new SolidColorBrush(Colors.Transparent);
+        }
+
+        SetCountdownSelectorItemVisual(item, isPointerOver: false);
     }
 
     private void SetCountdownSelectorItemVisual(Border item, bool isPointerOver, bool isPressed = false)
@@ -1030,7 +1089,7 @@ public sealed partial class MainWindow : Window
             ? "ToastButton/EnabledSavedContentFormat"
             : "ToastButton/DisabledSavedContentFormat");
 
-        _startupNotificationService.ShowToast(
+        _startupNotificationService.ShowStatusToast(
             GetString("ToastButton/SavedTitle"),
             string.Format(CultureInfo.CurrentCulture, contentFormat, countdownTitle));
     }
@@ -1363,10 +1422,12 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        string removedCountdownId = _state.SelectedCountdownId;
+        await AnimateCountdownSelectorItemRemovalAsync(removedCountdownId);
         await ApplyCommittedStateAsync(_state.RemoveCountdown(_state.SelectedCountdownId), reconcileStartupTask: true, refreshEditor: true);
     }
 
-    private void SettingsButton_Click(object sender, RoutedEventArgs e)
+    private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
     {
         ShowSettingsPage();
     }
@@ -1380,7 +1441,7 @@ public sealed partial class MainWindow : Window
     {
         _widgetHelpFlyout?.Hide();
         _isSettingsVisible = true;
-        HideCountdownSelectorImmediately(clearItems: false);
+        HideCountdownSelectorImmediately(clearItems: true);
         MainContentScroller.Visibility = Visibility.Collapsed;
         SettingsContentScroller.Visibility = Visibility.Visible;
         SettingsContentScroller.ChangeView(null, 0, null, true);
@@ -1436,17 +1497,26 @@ public sealed partial class MainWindow : Window
         UpdateButtonStatus();
     }
 
-    private void DisplaySizeComboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void DaysTextSizeSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
     {
-        if (_isUpdatingSettingsControls ||
-            DisplaySizeComboBox.SelectedItem is not ComboBoxItem selectedItem ||
-            selectedItem.Tag is not string tag ||
-            !Enum.TryParse(tag, out CountdownDisplaySize displaySize))
+        if (_isUpdatingSettingsControls)
         {
             return;
         }
 
-        _preferences = _preferences.With(displaySize: displaySize);
+        _preferences = _preferences.With(daysTextSize: e.NewValue);
+        _settingsStore.SavePreferences(_preferences);
+        ApplyDisplaySizePreference();
+    }
+
+    private void TitleTextSizeSlider_ValueChanged(object sender, Microsoft.UI.Xaml.Controls.Primitives.RangeBaseValueChangedEventArgs e)
+    {
+        if (_isUpdatingSettingsControls)
+        {
+            return;
+        }
+
+        _preferences = _preferences.With(titleTextSize: e.NewValue);
         _settingsStore.SavePreferences(_preferences);
         ApplyDisplaySizePreference();
     }
@@ -1462,7 +1532,7 @@ public sealed partial class MainWindow : Window
         if (nextPreferences.OpenWindowAtStartup &&
             !await _startupFeatureService.EnsureAvailableForAsync(_state, nextPreferences))
         {
-            _startupNotificationService.ShowToast(
+            _startupNotificationService.ShowStatusToast(
                 GetString("CreateStartupTaskFailedNotification/Title"),
                 GetString("CreateStartupTaskFailedNotification/Content"));
             UpdateSettingsControls();
@@ -1479,7 +1549,7 @@ public sealed partial class MainWindow : Window
     {
         if (!await _startupFeatureService.EnsureAvailableForAsync(nextState, _preferences))
         {
-            _startupNotificationService.ShowToast(
+            _startupNotificationService.ShowStatusToast(
                 GetString("CreateStartupTaskFailedNotification/Title"),
                 GetString("CreateStartupTaskFailedNotification/Content"));
             UpdateButtonStatus();

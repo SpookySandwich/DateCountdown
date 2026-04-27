@@ -35,7 +35,10 @@ internal sealed class StartupTaskRunner
                 string daysLeft = displayText.FormatDaysLeft(
                     CountdownLogic.CalculateDaysLeft(countdown.TargetDate, now),
                     CultureInfo.CurrentCulture);
-                _startupNotificationService.ShowToast(daysLeft, displayText.FormatTitle(countdown.Title));
+                _startupNotificationService.ShowStartupCountdownToast(
+                    countdown.Id,
+                    daysLeft,
+                    displayText.FormatTitle(countdown.Title));
             }
         }
 
