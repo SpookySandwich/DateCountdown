@@ -56,7 +56,14 @@ internal sealed class CountdownSettingsStore
             ReadBool(CountdownSettingsKeys.SortCountdownsByDaysLeft),
             ReadDouble(CountdownSettingsKeys.DaysTextSize) ?? legacyDaysTextSize,
             ReadDouble(CountdownSettingsKeys.TitleTextSize) ?? legacyTitleTextSize,
-            ReadBool(CountdownSettingsKeys.OpenWindowAtStartup));
+            ReadBool(CountdownSettingsKeys.OpenWindowAtStartup),
+            ReadBool(CountdownSettingsKeys.ShowDesktopCountdown),
+            ReadBool(CountdownSettingsKeys.ReduceMotion),
+            ReadDouble(CountdownSettingsKeys.DesktopCountdownX) ?? CountdownPreferences.DefaultDesktopCountdownX,
+            ReadDouble(CountdownSettingsKeys.DesktopCountdownY) ?? CountdownPreferences.DefaultDesktopCountdownY,
+            ReadDouble(CountdownSettingsKeys.DesktopCountdownScale) ?? CountdownPreferences.DefaultDesktopCountdownScale,
+            _localSettings.Values[CountdownSettingsKeys.DesktopCountdownCss] as string,
+            DesktopOverlaySettingsJson.Deserialize(_localSettings.Values[CountdownSettingsKeys.DesktopOverlays] as string));
     }
 
     public void SavePreferences(CountdownPreferences preferences)
@@ -65,6 +72,13 @@ internal sealed class CountdownSettingsStore
         _localSettings.Values[CountdownSettingsKeys.DaysTextSize] = preferences.DaysTextSize;
         _localSettings.Values[CountdownSettingsKeys.TitleTextSize] = preferences.TitleTextSize;
         _localSettings.Values[CountdownSettingsKeys.OpenWindowAtStartup] = preferences.OpenWindowAtStartup;
+        _localSettings.Values[CountdownSettingsKeys.ShowDesktopCountdown] = preferences.ShowDesktopCountdown;
+        _localSettings.Values[CountdownSettingsKeys.ReduceMotion] = preferences.ReduceMotion;
+        _localSettings.Values[CountdownSettingsKeys.DesktopCountdownX] = preferences.DesktopCountdownX;
+        _localSettings.Values[CountdownSettingsKeys.DesktopCountdownY] = preferences.DesktopCountdownY;
+        _localSettings.Values[CountdownSettingsKeys.DesktopCountdownScale] = preferences.DesktopCountdownScale;
+        _localSettings.Values[CountdownSettingsKeys.DesktopCountdownCss] = preferences.DesktopCountdownCss;
+        _localSettings.Values[CountdownSettingsKeys.DesktopOverlays] = DesktopOverlaySettingsJson.Serialize(preferences.DesktopOverlays);
     }
 
     private bool ReadBool(string key)

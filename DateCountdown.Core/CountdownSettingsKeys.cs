@@ -13,5 +13,12 @@ namespace DateCountdown.Core
         public const string DaysTextSize = "daysTextSize";
         public const string TitleTextSize = "titleTextSize";
         public const string OpenWindowAtStartup = "openWindowAtStartup";
+        public const string ShowDesktopCountdown = "showDesktopCountdown";
+        public const string ReduceMotion = "reduceMotion";
+        public const string DesktopCountdownX = "desktopCountdownX";
+        public const string DesktopCountdownY = "desktopCountdownY";
+        public const string DesktopCountdownScale = "desktopCountdownScale";
+        public const string DesktopCountdownCss = "desktopCountdownCss";
+        public const string DesktopOverlays = "desktopOverlays";
     }
 }

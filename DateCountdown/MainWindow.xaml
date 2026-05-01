@@ -141,6 +141,14 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Click="NotifyButton_Click">
+                            <Button.Resources>
+                                <SolidColorBrush
+                                    x:Key="ButtonBackgroundDisabled"
+                                    Color="Transparent" />
+                                <SolidColorBrush
+                                    x:Key="ButtonBorderBrushDisabled"
+                                    Color="Transparent" />
+                            </Button.Resources>
                             <Button.RenderTransform>
                                 <TranslateTransform />
                             </Button.RenderTransform>
@@ -225,6 +233,15 @@
                                             <FontIcon
                                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                 Glyph="&#xE713;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem
+                                        x:Name="DesktopCountdownMenuItem"
+                                        Click="DesktopCountdownMenuItem_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon
+                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                Glyph="&#xE7F4;" />
                                         </MenuFlyoutItem.Icon>
                                     </MenuFlyoutItem>
                                 </MenuFlyout>
@@ -419,6 +436,36 @@
                                     ValueChanged="TitleTextSizeSlider_ValueChanged" />
                             </StackPanel>
                         </Expander>
+                        <Border
+                            Background="{ThemeResource ControlFillColorDefaultBrush}"
+                            CornerRadius="6">
+                            <Grid Padding="16">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon
+                                    Grid.Column="0"
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    FontSize="18"
+                                    Glyph="&#xE776;"
+                                    VerticalAlignment="Center" />
+                                <TextBlock
+                                    x:Name="ReduceMotionTitleText"
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    FontWeight="SemiBold" />
+                                <ToggleSwitch
+                                    x:Name="ReduceMotionToggle"
+                                    Grid.Column="2"
+                                    Margin="16,0,0,0"
+                                    MinWidth="0"
+                                    OffContent=""
+                                    OnContent=""
+                                    Toggled="ReduceMotionToggle_Toggled" />
+                            </Grid>
+                        </Border>
                     </StackPanel>
 
                     <StackPanel Spacing="8">
@@ -501,6 +548,203 @@
                             x:Name="SourceCodeLinkButton"
                             Padding="0"
                             NavigateUri="https://github.com/SpookySandwich/DateCountdown" />
+                    </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <ScrollViewer
+            x:Name="DesktopCountdownContentScroller"
+            Grid.Row="1"
+            Canvas.ZIndex="2"
+            Padding="18,4,18,32"
+            HorizontalScrollBarVisibility="Disabled"
+            HorizontalScrollMode="Disabled"
+            SizeChanged="DesktopCountdownContentScroller_SizeChanged"
+            VerticalScrollBarVisibility="Auto"
+            VerticalScrollMode="Auto"
+            Visibility="Collapsed">
+            <StackPanel
+                x:Name="DesktopCountdownContentPanel"
+                MaxWidth="640"
+                MinWidth="360"
+                HorizontalAlignment="Center"
+                Spacing="24">
+                <StackPanel Spacing="16">
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            x:Name="DesktopCountdownBackButton"
+                            Width="36"
+                            Height="36"
+                            Padding="0"
+                            AutomationProperties.AutomationId="DesktopCountdownBackButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="DesktopCountdownBackButton_Click">
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="16"
+                                Glyph="&#xE72B;" />
+                        </Button>
+                        <TextBlock
+                            x:Name="DesktopCountdownPageTitleText"
+                            VerticalAlignment="Center"
+                            FontSize="22"
+                            FontWeight="SemiBold" />
+                    </StackPanel>
+
+                    <Border
+                        Background="{ThemeResource ControlFillColorDefaultBrush}"
+                        CornerRadius="6">
+                        <Grid Padding="16" RowSpacing="3">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="40" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <FontIcon
+                                Grid.Column="0"
+                                Grid.RowSpan="2"
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="20"
+                                Glyph="&#xE7F4;"
+                                HorizontalAlignment="Center"
+                                VerticalAlignment="Center" />
+                            <TextBlock
+                                x:Name="DesktopCountdownTitleText"
+                                Grid.Column="1"
+                                AutomationProperties.AutomationId="DesktopCountdownTitleText"
+                                FontWeight="SemiBold"
+                                TextWrapping="WrapWholeWords" />
+                            <TextBlock
+                                x:Name="DesktopCountdownDescriptionText"
+                                Grid.Row="1"
+                                Grid.Column="1"
+                                AutomationProperties.AutomationId="DesktopCountdownDescriptionText"
+                                MaxWidth="440"
+                                Opacity="0.72"
+                                TextWrapping="WrapWholeWords" />
+                            <ToggleSwitch
+                                x:Name="DesktopCountdownToggle"
+                                Grid.Column="2"
+                                Grid.RowSpan="2"
+                                Margin="16,0,0,0"
+                                AutomationProperties.AutomationId="DesktopCountdownToggle"
+                                MinWidth="0"
+                                OffContent=""
+                                OnContent=""
+                                VerticalAlignment="Center"
+                                Toggled="DesktopCountdownToggle_Toggled" />
+                        </Grid>
+                    </Border>
+
+                    <InfoBar
+                        x:Name="DesktopCountdownExperimentalInfoBar"
+                        AutomationProperties.AutomationId="DesktopCountdownExperimentalInfoBar"
+                        IsClosable="False"
+                        IsOpen="True"
+                        Severity="Informational" />
+
+                    <StackPanel
+                        x:Name="DesktopCountdownOptionsPanel"
+                        Spacing="8">
+                        <TextBlock
+                            x:Name="DesktopCountdownPlacementHeaderText"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <Border
+                            Background="{ThemeResource ControlFillColorDefaultBrush}"
+                            CornerRadius="6">
+                            <StackPanel
+                                Padding="16"
+                                Spacing="12">
+                                <StackPanel
+                                    Orientation="Horizontal"
+                                    Spacing="8">
+                                    <Button
+                                        x:Name="AdjustDesktopCountdownButton"
+                                        Click="AdjustDesktopCountdownButton_Click" />
+                                    <Button
+                                        x:Name="ResetDesktopCountdownPositionButton"
+                                        Click="ResetDesktopCountdownPositionButton_Click" />
+                                </StackPanel>
+                                <TextBlock
+                                    x:Name="DesktopCountdownAdjustHintText"
+                                    MaxWidth="560"
+                                    Opacity="0.72"
+                                    TextWrapping="WrapWholeWords" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+
+                    <StackPanel
+                        x:Name="DesktopCountdownStylePanel"
+                        AutomationProperties.AutomationId="DesktopCountdownStylePanel"
+                        Spacing="8">
+                        <TextBlock
+                            x:Name="DesktopCountdownStyleHeaderText"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <Expander
+                            x:Name="DesktopCountdownStyleExpander"
+                            AutomationProperties.AutomationId="DesktopCountdownStyleExpander"
+                            HorizontalAlignment="Stretch"
+                            IsExpanded="False">
+                            <Expander.Header>
+                                <Grid MinHeight="56">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon
+                                        Grid.Column="0"
+                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                        FontSize="18"
+                                        Glyph="&#xE943;"
+                                        VerticalAlignment="Center" />
+                                    <TextBlock
+                                        x:Name="DesktopCountdownStyleTitleText"
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold" />
+                                </Grid>
+                            </Expander.Header>
+                            <StackPanel
+                                Padding="56,0,16,18"
+                                Spacing="12">
+                                <TextBlock
+                                    x:Name="DesktopCountdownStyleDescriptionText"
+                                    Opacity="0.72"
+                                    TextWrapping="WrapWholeWords" />
+                                <TextBlock
+                                    x:Name="DesktopCountdownStyleTemplatesHeaderText"
+                                    FontSize="13"
+                                    FontWeight="SemiBold" />
+                                <StackPanel
+                                    x:Name="DesktopCountdownStyleTemplatesPanel"
+                                    AutomationProperties.AutomationId="DesktopCountdownStyleTemplatesPanel"
+                                    Spacing="8" />
+                                <TextBox
+                                    x:Name="DesktopCountdownCssTextBox"
+                                    AutomationProperties.AutomationId="DesktopCountdownCssTextBox"
+                                    Height="180"
+                                    AcceptsReturn="True"
+                                    FontFamily="Cascadia Mono, Consolas"
+                                    TextChanged="DesktopCountdownCssTextBox_TextChanged"
+                                    TextWrapping="NoWrap" />
+                                <Button
+                                    x:Name="ResetDesktopCountdownStyleButton"
+                                    AutomationProperties.AutomationId="ResetDesktopCountdownStyleButton"
+                                    HorizontalAlignment="Left"
+                                    Click="ResetDesktopCountdownStyleButton_Click" />
+                            </StackPanel>
+                        </Expander>
                     </StackPanel>
                 </StackPanel>
             </StackPanel>

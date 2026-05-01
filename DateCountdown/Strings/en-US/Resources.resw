@@ -217,11 +217,23 @@
   <data name="SettingsMenuItem.Text" xml:space="preserve">
     <value>Settings</value>
   </data>
+  <data name="DesktopCountdownMenuItem.Text" xml:space="preserve">
+    <value>Desktop overlay</value>
+  </data>
   <data name="SettingsButton.HelpText" xml:space="preserve">
     <value>Open app settings for sorting, display size, and startup behavior.</value>
   </data>
   <data name="SettingsButton.Tooltip" xml:space="preserve">
     <value>Settings</value>
+  </data>
+  <data name="Tray.Tooltip" xml:space="preserve">
+    <value>Date Countdown desktop overlay is running</value>
+  </data>
+  <data name="Tray.Open" xml:space="preserve">
+    <value>Open Date Countdown</value>
+  </data>
+  <data name="Tray.Exit" xml:space="preserve">
+    <value>Exit</value>
   </data>
   <data name="Settings.BackButton" xml:space="preserve">
     <value>Back</value>
@@ -253,6 +265,12 @@
   <data name="Settings.TitleTextSizeLabel" xml:space="preserve">
     <value>Event title</value>
   </data>
+  <data name="Settings.ReduceMotionTitle" xml:space="preserve">
+    <value>Reduce motion</value>
+  </data>
+  <data name="Settings.ReduceMotionDescription" xml:space="preserve">
+    <value>Turn off nonessential transition animations.</value>
+  </data>
   <data name="Settings.DisplaySizeTitle" xml:space="preserve">
     <value>Display size</value>
   </data>
@@ -276,6 +294,81 @@
   </data>
   <data name="Settings.OpenAtStartupDescription" xml:space="preserve">
     <value>Show Date Countdown after startup notifications and tile updates run.</value>
+  </data>
+  <data name="Settings.ExperimentalHeader" xml:space="preserve">
+    <value>Experimental</value>
+  </data>
+  <data name="Settings.DesktopCountdownTitle" xml:space="preserve">
+    <value>Show on desktop</value>
+  </data>
+  <data name="Settings.DesktopCountdownDescription" xml:space="preserve">
+    <value>Keeps Date Countdown running in the background so this countdown stays behind desktop icons.</value>
+  </data>
+  <data name="DesktopCountdown.Title" xml:space="preserve">
+    <value>Desktop overlay</value>
+  </data>
+  <data name="DesktopCountdown.LimitationsHeader" xml:space="preserve">
+    <value>Limitations</value>
+  </data>
+  <data name="DesktopCountdown.LimitationsText" xml:space="preserve">
+    <value>Experimental and not guaranteed to work on every Windows setup. Desktop overlays rely on Windows desktop behavior that can change; if Windows Explorer restarts or Windows changes this behavior, reopen Date Countdown to restore enabled overlays.</value>
+  </data>
+  <data name="DesktopCountdown.PlacementHeader" xml:space="preserve">
+    <value>Placement</value>
+  </data>
+  <data name="DesktopCountdown.StyleHeader" xml:space="preserve">
+    <value>Style</value>
+  </data>
+  <data name="Settings.DesktopCountdownAdjustButton" xml:space="preserve">
+    <value>Adjust position</value>
+  </data>
+  <data name="Settings.DesktopCountdownDoneButton" xml:space="preserve">
+    <value>Done</value>
+  </data>
+  <data name="Settings.DesktopCountdownResetButton" xml:space="preserve">
+    <value>Reset position</value>
+  </data>
+  <data name="Settings.DesktopCountdownAdjustHint" xml:space="preserve">
+    <value>While adjusting, drag inside the box to move it. Drag a corner to resize.</value>
+  </data>
+  <data name="Settings.DesktopCountdownStyleTitle" xml:space="preserve">
+    <value>Advanced desktop style</value>
+  </data>
+  <data name="Settings.DesktopCountdownStyleDescription" xml:space="preserve">
+    <value>Use .countdown, .days, and .title for color, font, shadow, spacing, and alignment. Position and size are controlled by Date Countdown.</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplatesHeader" xml:space="preserve">
+    <value>Style templates</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateApplyAutomationName" xml:space="preserve">
+    <value>Apply {0} template</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateSoftGlow.Title" xml:space="preserve">
+    <value>Soft glow</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateSoftGlow.Description" xml:space="preserve">
+    <value>Centered white text with a soft desktop shadow.</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateMinimalMono.Title" xml:space="preserve">
+    <value>Quiet right</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateMinimalMono.Description" xml:space="preserve">
+    <value>Right-aligned neutral text with a light shadow.</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateWarmAccent.Title" xml:space="preserve">
+    <value>Warm accent</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateWarmAccent.Description" xml:space="preserve">
+    <value>Left-aligned accent text with stronger contrast.</value>
+  </data>
+  <data name="Settings.DesktopCountdownResetStyleButton" xml:space="preserve">
+    <value>Reset style</value>
+  </data>
+  <data name="Settings.DesktopCountdownFailedTitle" xml:space="preserve">
+    <value>Desktop overlay unavailable</value>
+  </data>
+  <data name="Settings.DesktopCountdownFailedContent" xml:space="preserve">
+    <value>Windows did not provide a desktop host for the countdown.</value>
   </data>
   <data name="Settings.AboutHeader" xml:space="preserve">
     <value>About</value>

@@ -218,11 +218,23 @@
   <data name="SettingsMenuItem.Text" xml:space="preserve">
     <value>设置</value>
   </data>
+  <data name="DesktopCountdownMenuItem.Text" xml:space="preserve">
+    <value>桌面浮层</value>
+  </data>
   <data name="SettingsButton.HelpText" xml:space="preserve">
     <value>打开排序、显示大小和启动行为设置。</value>
   </data>
   <data name="SettingsButton.Tooltip" xml:space="preserve">
     <value>设置</value>
+  </data>
+  <data name="Tray.Tooltip" xml:space="preserve">
+    <value>日期倒计时桌面浮层正在运行</value>
+  </data>
+  <data name="Tray.Open" xml:space="preserve">
+    <value>打开日期倒计时</value>
+  </data>
+  <data name="Tray.Exit" xml:space="preserve">
+    <value>退出</value>
   </data>
   <data name="Settings.BackButton" xml:space="preserve">
     <value>返回</value>
@@ -254,6 +266,12 @@
   <data name="Settings.TitleTextSizeLabel" xml:space="preserve">
     <value>事件标题</value>
   </data>
+  <data name="Settings.ReduceMotionTitle" xml:space="preserve">
+    <value>减少动态效果</value>
+  </data>
+  <data name="Settings.ReduceMotionDescription" xml:space="preserve">
+    <value>关闭非必要的过渡动画。</value>
+  </data>
   <data name="Settings.DisplaySizeTitle" xml:space="preserve">
     <value>显示大小</value>
   </data>
@@ -277,6 +295,81 @@
   </data>
   <data name="Settings.OpenAtStartupDescription" xml:space="preserve">
     <value>开机通知和磁贴更新运行后显示日期倒计时窗口。</value>
+  </data>
+  <data name="Settings.ExperimentalHeader" xml:space="preserve">
+    <value>实验性功能</value>
+  </data>
+  <data name="Settings.DesktopCountdownTitle" xml:space="preserve">
+    <value>显示在桌面</value>
+  </data>
+  <data name="Settings.DesktopCountdownDescription" xml:space="preserve">
+    <value>日期倒计时会在后台保持运行，让此倒计时停留在桌面图标后方。</value>
+  </data>
+  <data name="DesktopCountdown.Title" xml:space="preserve">
+    <value>桌面浮层</value>
+  </data>
+  <data name="DesktopCountdown.LimitationsHeader" xml:space="preserve">
+    <value>限制</value>
+  </data>
+  <data name="DesktopCountdown.LimitationsText" xml:space="preserve">
+    <value>此功能仍处于实验阶段，不保证能在所有 Windows 环境中稳定工作。桌面浮层依赖可能变化的 Windows 桌面行为；如果 Windows 资源管理器重启或 Windows 更改相关行为，请重新打开日期倒计时以恢复已开启的浮层。</value>
+  </data>
+  <data name="DesktopCountdown.PlacementHeader" xml:space="preserve">
+    <value>位置</value>
+  </data>
+  <data name="DesktopCountdown.StyleHeader" xml:space="preserve">
+    <value>样式</value>
+  </data>
+  <data name="Settings.DesktopCountdownAdjustButton" xml:space="preserve">
+    <value>调整位置</value>
+  </data>
+  <data name="Settings.DesktopCountdownDoneButton" xml:space="preserve">
+    <value>完成</value>
+  </data>
+  <data name="Settings.DesktopCountdownResetButton" xml:space="preserve">
+    <value>重置位置</value>
+  </data>
+  <data name="Settings.DesktopCountdownAdjustHint" xml:space="preserve">
+    <value>调整时，拖动框内区域可移动。拖动角落可调整大小。</value>
+  </data>
+  <data name="Settings.DesktopCountdownStyleTitle" xml:space="preserve">
+    <value>高级桌面样式</value>
+  </data>
+  <data name="Settings.DesktopCountdownStyleDescription" xml:space="preserve">
+    <value>可使用 .countdown、.days 和 .title 调整颜色、字体、阴影、间距和对齐。位置和大小由日期倒计时控制。</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplatesHeader" xml:space="preserve">
+    <value>样式模板</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateApplyAutomationName" xml:space="preserve">
+    <value>应用“{0}”模板</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateSoftGlow.Title" xml:space="preserve">
+    <value>柔和光晕</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateSoftGlow.Description" xml:space="preserve">
+    <value>居中的白色文字，带柔和桌面阴影。</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateMinimalMono.Title" xml:space="preserve">
+    <value>右侧静谧</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateMinimalMono.Description" xml:space="preserve">
+    <value>右对齐的中性文字，带轻微阴影。</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateWarmAccent.Title" xml:space="preserve">
+    <value>暖色强调</value>
+  </data>
+  <data name="DesktopCountdown.StyleTemplateWarmAccent.Description" xml:space="preserve">
+    <value>左对齐的强调色文字，对比更强。</value>
+  </data>
+  <data name="Settings.DesktopCountdownResetStyleButton" xml:space="preserve">
+    <value>重置样式</value>
+  </data>
+  <data name="Settings.DesktopCountdownFailedTitle" xml:space="preserve">
+    <value>无法显示桌面浮层</value>
+  </data>
+  <data name="Settings.DesktopCountdownFailedContent" xml:space="preserve">
+    <value>Windows 未提供可用于显示倒计时的桌面宿主。</value>
   </data>
   <data name="Settings.AboutHeader" xml:space="preserve">
     <value>关于</value>

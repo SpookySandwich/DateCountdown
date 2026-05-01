@@ -13,6 +13,7 @@ using Microsoft.Windows.ApplicationModel.Resources;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Linq;
 using System.Threading.Tasks;
 using Windows.ApplicationModel;
 using Windows.Foundation;
@@ -24,10 +25,85 @@ public sealed partial class MainWindow : Window
 {
     private const string TileGlyph = "\uECA5";
     private const string WidgetAddGlyph = "\uF036";
+    private const string ApplyStyleTemplateGlyph = "\uE77F";
     private const double MainContentNavigationOffset = 34;
     private static readonly Duration VisibilityMotionDuration = new(TimeSpan.FromMilliseconds(167));
+    private static readonly IReadOnlyList<DesktopCountdownStyleTemplate> DesktopCountdownStyleTemplates =
+    [
+        new(
+            "DesktopCountdown/StyleTemplateSoftGlow/Title",
+            "DesktopCountdown/StyleTemplateSoftGlow/Description",
+            """
+            .countdown {
+                color: white;
+                font-family: 'Segoe UI Variable Display', 'Segoe UI', sans-serif;
+                text-align: center;
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.78), 0 0 22px rgba(0, 0, 0, 0.42);
+            }
 
-    private readonly bool _animationsEnabled = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
+            .days {
+                font-weight: 300;
+                line-height: 1.08;
+                white-space: nowrap;
+            }
+
+            .title {
+                font-weight: 600;
+                margin-top: 0.22em;
+                opacity: 0.9;
+            }
+            """),
+        new(
+            "DesktopCountdown/StyleTemplateMinimalMono/Title",
+            "DesktopCountdown/StyleTemplateMinimalMono/Description",
+            """
+            .countdown {
+                color: rgba(255, 255, 255, 0.94);
+                font-family: 'Segoe UI Variable Display', 'Segoe UI', sans-serif;
+                text-align: right;
+                text-shadow: 0 1px 5px rgba(0, 0, 0, 0.72);
+            }
+
+            .days {
+                font-weight: 300;
+                line-height: 1.08;
+                white-space: nowrap;
+            }
+
+            .title {
+                font-weight: 600;
+                margin-top: 0.3em;
+                letter-spacing: 0.08em;
+                opacity: 0.76;
+                text-transform: uppercase;
+            }
+            """),
+        new(
+            "DesktopCountdown/StyleTemplateWarmAccent/Title",
+            "DesktopCountdown/StyleTemplateWarmAccent/Description",
+            """
+            .countdown {
+                color: #fff2c2;
+                text-align: left;
+                text-shadow: 0 2px 8px rgba(0, 0, 0, 0.86), 0 0 18px rgba(0, 0, 0, 0.52);
+            }
+
+            .days {
+                font-weight: 600;
+                line-height: 1.08;
+                white-space: nowrap;
+            }
+
+            .title {
+                color: #ffd88a;
+                letter-spacing: 0.04em;
+                margin-top: 0.18em;
+                opacity: 0.92;
+            }
+            """)
+    ];
+
+    private readonly bool _systemAnimationsEnabled = new Windows.UI.ViewManagement.UISettings().AnimationsEnabled;
     private readonly bool _isWindows11OrGreater = OperatingSystemInfo.IsWindows11OrGreater();
     private readonly CountdownSettingsStore _settingsStore = new();
     private readonly ResourceLoader _resourceLoader = new();
@@ -36,6 +112,8 @@ public sealed partial class MainWindow : Window
     private readonly StartupNotificationService _startupNotificationService = new();
     private readonly WidgetSyncService _widgetSyncService;
     private readonly WindowChromeService _windowChromeService = new();
+    private readonly DesktopCountdownService _desktopCountdownService = new();
+    private readonly DesktopTrayService _desktopTrayService;
 
     private CountdownState _state = CountdownState.CreateDefault(DateTimeOffset.Now);
     private CountdownPreferences _preferences = CountdownPreferences.Default;
@@ -44,7 +122,11 @@ public sealed partial class MainWindow : Window
     private double _countdownSelectorDragStartX;
     private bool _didDragCountdownSelector;
     private bool _isDraggingCountdownSelector;
+    private bool _isAdjustingDesktopCountdown;
+    private bool _isDesktopOverlayAvailable;
+    private bool _isExiting;
     private bool _isMotionReady;
+    private bool _isDesktopCountdownPageVisible;
     private bool _isSettingsVisible;
     private bool _isUpdatingControls;
     private bool _isUpdatingSettingsControls = true;
@@ -53,6 +135,10 @@ public sealed partial class MainWindow : Window
     private Storyboard? _countdownSelectorVisibilityStoryboard;
     private Storyboard? _toolbarPositionStoryboard;
     private Flyout? _widgetHelpFlyout;
+
+    private bool AnimationsEnabled => _systemAnimationsEnabled && !_preferences.ReduceMotion;
+
+    private sealed record DesktopCountdownStyleTemplate(string TitleKey, string DescriptionKey, string Css);
 
     public MainWindow()
     {
@@ -63,12 +149,24 @@ public sealed partial class MainWindow : Window
         _isUpdatingSettingsControls = false;
 
         _windowChromeService.Initialize(this, AppTitleBar, GetString("AppName"), _isWindows11OrGreater);
+        _desktopTrayService = new DesktopTrayService(
+            this,
+            () => HasEnabledDesktopOverlays() && !_isExiting,
+            ExitFromTray,
+            GetString("Tray/Tooltip"),
+            GetString("Tray/Open"),
+            GetString("Tray/Exit"));
         Activated += MainWindow_Activated;
+        Closed += MainWindow_Closed;
 
         LoadPreferences();
         LoadState();
+        MigrateLegacyDesktopOverlayPreference();
+        ReconcileDesktopOverlaySettingsWithState(saveIfChanged: true);
         SetDisplay();
+        ApplyMotionPreference();
         _isMotionReady = true;
+        ApplyDesktopCountdownPreference();
         SyncWidgets();
         _ = ReconcileStartupTaskAsync();
     }
@@ -99,6 +197,45 @@ public sealed partial class MainWindow : Window
     private void LoadState()
     {
         _state = ApplyPreferencesToState(NormalizeStateForCurrentOs(_settingsStore.Load(DateTimeOffset.Now)));
+    }
+
+    private void MigrateLegacyDesktopOverlayPreference()
+    {
+        if (!_preferences.ShowDesktopCountdown || _preferences.DesktopOverlays.Count > 0)
+        {
+            return;
+        }
+
+        DesktopOverlaySettings overlay = new(
+            _state.SelectedCountdownId,
+            isEnabled: true,
+            _preferences.DesktopCountdownX,
+            _preferences.DesktopCountdownY,
+            _preferences.DesktopCountdownScale,
+            _preferences.DesktopCountdownCss);
+        _preferences = _preferences.With(
+            showDesktopCountdown: false,
+            desktopOverlays: new[] { overlay });
+        _settingsStore.SavePreferences(_preferences);
+    }
+
+    private void ReconcileDesktopOverlaySettingsWithState(bool saveIfChanged)
+    {
+        HashSet<string> countdownIds = new(_state.Countdowns.Select(countdown => countdown.Id), StringComparer.Ordinal);
+        List<DesktopOverlaySettings> overlays = _preferences.DesktopOverlays
+            .Where(overlay => countdownIds.Contains(overlay.CountdownId))
+            .ToList();
+
+        if (overlays.Count == _preferences.DesktopOverlays.Count)
+        {
+            return;
+        }
+
+        _preferences = _preferences.With(desktopOverlays: overlays);
+        if (saveIfChanged)
+        {
+            _settingsStore.SavePreferences(_preferences);
+        }
     }
 
     private CountdownState NormalizeStateForCurrentOs(CountdownState state)
@@ -148,6 +285,7 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetName(TextBoxTitle, GetString("Title/PlaceholderText"));
 
         ConfigureSettingsText();
+        RefreshDesktopOverlayAvailability();
         UpdateSettingsControls();
         ApplyDisplaySizePreference();
         UpdateButtonStatus();
@@ -164,29 +302,142 @@ public sealed partial class MainWindow : Window
         SettingsAboutHeaderText.Text = GetString("Settings/AboutHeader");
 
         SettingsMenuItem.Text = GetString("SettingsMenuItem/Text");
+        DesktopCountdownMenuItem.Text = GetString("DesktopCountdownMenuItem/Text");
         SortCountdownsTitleText.Text = GetString("Settings/SortCountdownsTitle");
         TextSizeTitleText.Text = GetString("Settings/TextSizeTitle");
         DaysTextSizeLabelText.Text = GetString("Settings/DaysTextSizeLabel");
         TitleTextSizeLabelText.Text = GetString("Settings/TitleTextSizeLabel");
+        ReduceMotionTitleText.Text = GetString("Settings/ReduceMotionTitle");
         OpenAtStartupTitleText.Text = GetString("Settings/OpenAtStartupTitle");
+        AutomationProperties.SetName(DesktopCountdownBackButton, GetString("Settings/BackButton"));
+        ToolTipService.SetToolTip(DesktopCountdownBackButton, GetString("Settings/BackButton"));
+        DesktopCountdownPageTitleText.Text = GetString("DesktopCountdown/Title");
+        DesktopCountdownTitleText.Text = GetString("Settings/DesktopCountdownTitle");
+        DesktopCountdownDescriptionText.Text = GetString("Settings/DesktopCountdownDescription");
+        DesktopCountdownExperimentalInfoBar.Title = GetString("Settings/ExperimentalHeader");
+        DesktopCountdownExperimentalInfoBar.Message = GetString("DesktopCountdown/LimitationsText");
+        DesktopCountdownPlacementHeaderText.Text = GetString("DesktopCountdown/PlacementHeader");
+        DesktopCountdownStyleHeaderText.Text = GetString("DesktopCountdown/StyleHeader");
+        DesktopCountdownAdjustHintText.Text = GetString("Settings/DesktopCountdownAdjustHint");
+        DesktopCountdownStyleTitleText.Text = GetString("Settings/DesktopCountdownStyleTitle");
+        DesktopCountdownStyleDescriptionText.Text = GetString("Settings/DesktopCountdownStyleDescription");
+        DesktopCountdownStyleTemplatesHeaderText.Text = GetString("DesktopCountdown/StyleTemplatesHeader");
+        BuildDesktopCountdownStyleTemplateButtons();
+        ResetDesktopCountdownPositionButton.Content = GetString("Settings/DesktopCountdownResetButton");
+        ResetDesktopCountdownStyleButton.Content = GetString("Settings/DesktopCountdownResetStyleButton");
         AboutAppNameText.Text = GetString("AppName");
         AboutVersionText.Text = GetAppVersion();
         SourceCodeLinkButton.Content = GetString("Settings/SourceCodeLink");
 
         AutomationProperties.SetName(SortCountdownsToggle, SortCountdownsTitleText.Text);
         AutomationProperties.SetHelpText(SortCountdownsToggle, GetString("Settings/SortCountdownsDescription"));
+        AutomationProperties.SetName(DesktopCountdownMenuItem, GetString("DesktopCountdownMenuItem/Text"));
+        AutomationProperties.SetName(DesktopCountdownBackButton, GetString("Settings/BackButton"));
         AutomationProperties.SetName(TextSizeExpander, TextSizeTitleText.Text);
         AutomationProperties.SetHelpText(TextSizeExpander, GetString("Settings/TextSizeDescription"));
         AutomationProperties.SetName(DaysTextSizeSlider, DaysTextSizeLabelText.Text);
         AutomationProperties.SetName(TitleTextSizeSlider, TitleTextSizeLabelText.Text);
+        AutomationProperties.SetName(ReduceMotionToggle, ReduceMotionTitleText.Text);
+        AutomationProperties.SetHelpText(ReduceMotionToggle, GetString("Settings/ReduceMotionDescription"));
         AutomationProperties.SetName(OpenAtStartupToggle, OpenAtStartupTitleText.Text);
         AutomationProperties.SetHelpText(OpenAtStartupToggle, GetString("Settings/OpenAtStartupDescription"));
+        AutomationProperties.SetName(DesktopCountdownToggle, DesktopCountdownTitleText.Text);
+        AutomationProperties.SetHelpText(DesktopCountdownToggle, DesktopCountdownDescriptionText.Text);
+        AutomationProperties.SetName(DesktopCountdownExperimentalInfoBar, DesktopCountdownExperimentalInfoBar.Title);
+        AutomationProperties.SetHelpText(DesktopCountdownExperimentalInfoBar, DesktopCountdownExperimentalInfoBar.Message);
+        AutomationProperties.SetName(AdjustDesktopCountdownButton, GetString("Settings/DesktopCountdownAdjustButton"));
+        AutomationProperties.SetName(ResetDesktopCountdownPositionButton, GetString("Settings/DesktopCountdownResetButton"));
+        AutomationProperties.SetHelpText(AdjustDesktopCountdownButton, DesktopCountdownAdjustHintText.Text);
+        AutomationProperties.SetName(DesktopCountdownStyleExpander, DesktopCountdownStyleTitleText.Text);
+        AutomationProperties.SetHelpText(DesktopCountdownStyleExpander, DesktopCountdownStyleDescriptionText.Text);
+        AutomationProperties.SetName(DesktopCountdownCssTextBox, DesktopCountdownStyleTitleText.Text);
+        AutomationProperties.SetHelpText(DesktopCountdownCssTextBox, DesktopCountdownStyleDescriptionText.Text);
+        AutomationProperties.SetName(ResetDesktopCountdownStyleButton, GetString("Settings/DesktopCountdownResetStyleButton"));
         AutomationProperties.SetName(SourceCodeLinkButton, GetString("Settings/SourceCodeLink"));
 
         DaysTextSizeSlider.Minimum = CountdownPreferences.MinDaysTextSize;
         DaysTextSizeSlider.Maximum = CountdownPreferences.MaxDaysTextSize;
         TitleTextSizeSlider.Minimum = CountdownPreferences.MinTitleTextSize;
         TitleTextSizeSlider.Maximum = CountdownPreferences.MaxTitleTextSize;
+        DesktopCountdownCssTextBox.MaxLength = CountdownPreferences.MaxDesktopCountdownCssLength;
+    }
+
+    private void BuildDesktopCountdownStyleTemplateButtons()
+    {
+        DesktopCountdownStyleTemplatesPanel.Children.Clear();
+        for (int index = 0; index < DesktopCountdownStyleTemplates.Count; index++)
+        {
+            DesktopCountdownStyleTemplate template = DesktopCountdownStyleTemplates[index];
+            string title = GetString(template.TitleKey);
+            string description = GetString(template.DescriptionKey);
+            string automationName = string.Format(
+                CultureInfo.CurrentCulture,
+                GetString("DesktopCountdown/StyleTemplateApplyAutomationName"),
+                title);
+
+            Button button = new()
+            {
+                Tag = template.Css,
+                Padding = new Thickness(12, 10, 12, 10),
+                MinHeight = 56,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                HorizontalContentAlignment = HorizontalAlignment.Stretch,
+                Content = CreateDesktopCountdownStyleTemplateContent(title, description)
+            };
+            button.Click += DesktopCountdownStyleTemplateButton_Click;
+            ToolTipService.SetToolTip(button, automationName);
+            AutomationProperties.SetAutomationId(button, $"DesktopCountdownStyleTemplateButton{index}");
+            AutomationProperties.SetName(button, automationName);
+            AutomationProperties.SetHelpText(button, description);
+            DesktopCountdownStyleTemplatesPanel.Children.Add(button);
+        }
+    }
+
+    private static FrameworkElement CreateDesktopCountdownStyleTemplateContent(string title, string description)
+    {
+        Grid layout = new()
+        {
+            ColumnSpacing = 12,
+            HorizontalAlignment = HorizontalAlignment.Stretch
+        };
+        layout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+        layout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+        StackPanel text = new()
+        {
+            Spacing = 2
+        };
+        text.Children.Add(new TextBlock
+        {
+            Text = title,
+            FontSize = 13,
+            FontWeight = Microsoft.UI.Text.FontWeights.SemiBold,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            TextWrapping = TextWrapping.NoWrap
+        });
+        text.Children.Add(new TextBlock
+        {
+            Text = description,
+            FontSize = 12,
+            MaxLines = 2,
+            Opacity = 0.72,
+            TextTrimming = TextTrimming.CharacterEllipsis,
+            TextWrapping = TextWrapping.WrapWholeWords
+        });
+
+        FontIcon icon = new()
+        {
+            FontFamily = new FontFamily("Segoe Fluent Icons, Segoe MDL2 Assets"),
+            FontSize = 16,
+            Glyph = ApplyStyleTemplateGlyph,
+            Opacity = 0.78,
+            VerticalAlignment = VerticalAlignment.Center
+        };
+        Grid.SetColumn(icon, 1);
+
+        layout.Children.Add(text);
+        layout.Children.Add(icon);
+        return layout;
     }
 
     private void UpdateSettingsControls()
@@ -196,8 +447,25 @@ public sealed partial class MainWindow : Window
         {
             SortCountdownsToggle.IsOn = _preferences.SortCountdownsByDaysLeft;
             OpenAtStartupToggle.IsOn = _preferences.OpenWindowAtStartup;
+            DesktopOverlaySettings selectedOverlay = GetSelectedDesktopOverlay();
+            DesktopCountdownToggle.IsOn = selectedOverlay.IsEnabled;
+            ReduceMotionToggle.IsOn = _preferences.ReduceMotion;
             DaysTextSizeSlider.Value = _preferences.DaysTextSize;
             TitleTextSizeSlider.Value = _preferences.TitleTextSize;
+            if (DesktopCountdownCssTextBox.Text != selectedOverlay.Css)
+            {
+                DesktopCountdownCssTextBox.Text = selectedOverlay.Css;
+            }
+            AdjustDesktopCountdownButton.Content = GetString(_isAdjustingDesktopCountdown
+                ? "Settings/DesktopCountdownDoneButton"
+                : "Settings/DesktopCountdownAdjustButton");
+            Visibility enabledOverlayVisibility = selectedOverlay.IsEnabled
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+            DesktopCountdownOptionsPanel.Visibility = enabledOverlayVisibility;
+            DesktopCountdownStylePanel.Visibility = enabledOverlayVisibility;
+            AdjustDesktopCountdownButton.IsEnabled = selectedOverlay.IsEnabled;
+            ResetDesktopCountdownPositionButton.IsEnabled = selectedOverlay.IsEnabled;
             UpdateTextSizeValueText();
         }
         finally
@@ -209,6 +477,50 @@ public sealed partial class MainWindow : Window
     private void SettingsContentScroller_SizeChanged(object sender, SizeChangedEventArgs e)
     {
         SettingsContentPanel.Width = Math.Min(640, Math.Max(360, e.NewSize.Width - 36));
+    }
+
+    private void DesktopCountdownContentScroller_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        DesktopCountdownContentPanel.Width = Math.Min(640, Math.Max(360, e.NewSize.Width - 36));
+    }
+
+    private bool RefreshDesktopOverlayAvailability()
+    {
+        _isDesktopOverlayAvailable = DesktopWorkerWindowHostResolver.TryResolve(out _);
+        if (DesktopCountdownMenuItem is not null)
+        {
+            DesktopCountdownMenuItem.Visibility = _isDesktopOverlayAvailable
+                ? Visibility.Visible
+                : Visibility.Collapsed;
+        }
+
+        return _isDesktopOverlayAvailable;
+    }
+
+    private void ApplyMotionPreference()
+    {
+        if (AnimationsEnabled)
+        {
+            CountdownSelectorFrame.Transitions ??= new TransitionCollection
+            {
+                new RepositionThemeTransition()
+            };
+            CountdownSelectorItems.ChildrenTransitions ??= new TransitionCollection
+            {
+                new RepositionThemeTransition()
+            };
+            return;
+        }
+
+        _mainContentOffsetStoryboard?.Stop();
+        _mainContentOffsetStoryboard = null;
+        _countdownSelectorVisibilityStoryboard?.Stop();
+        _countdownSelectorVisibilityStoryboard = null;
+        _toolbarPositionStoryboard?.Stop();
+        _toolbarPositionStoryboard = null;
+        CountdownSelectorFrame.Transitions = null;
+        CountdownSelectorItems.ChildrenTransitions = null;
+        ResetToolbarButtonTransforms();
     }
 
     private static string GetAppVersion()
@@ -232,6 +544,7 @@ public sealed partial class MainWindow : Window
         MainContentPanel.Spacing = Math.Clamp(_preferences.TitleTextSize + 12, 24, 34);
         UpdateSettingsPreview();
         UpdateTextSizeValueText();
+        UpdateDesktopCountdown();
     }
 
     private void UpdateEditorFromState()
@@ -254,6 +567,7 @@ public sealed partial class MainWindow : Window
         TextBlockTitle.Text = _state.Title;
         TextBlockDays.Text = FormatDaysLeft(_dateDifference);
         UpdateSettingsPreview();
+        UpdateDesktopCountdown();
     }
 
     private void UpdateCountdownPreview(CountdownDraft draft)
@@ -304,7 +618,7 @@ public sealed partial class MainWindow : Window
 
     private void UpdateCountdownSelector()
     {
-        if (_isSettingsVisible)
+        if (_isSettingsVisible || _isDesktopCountdownPageVisible)
         {
             HideCountdownSelectorImmediately(clearItems: true);
             return;
@@ -336,7 +650,7 @@ public sealed partial class MainWindow : Window
         _countdownSelectorVisibilityStoryboard?.Stop();
         AnimateMainContentNavigationOffset(isVisible);
 
-        if (!_isMotionReady || !_animationsEnabled)
+        if (!_isMotionReady || !AnimationsEnabled)
         {
             CountdownSelectorFrame.Visibility = isVisible ? Visibility.Visible : Visibility.Collapsed;
             CountdownSelectorFrame.Opacity = isVisible ? 1 : 0;
@@ -422,7 +736,7 @@ public sealed partial class MainWindow : Window
         _mainContentOffsetStoryboard?.Stop();
         _mainContentOffsetStoryboard = null;
 
-        if (!_isMotionReady || !_animationsEnabled)
+        if (!_isMotionReady || !AnimationsEnabled)
         {
             transform.Y = targetOffset;
             return;
@@ -497,7 +811,7 @@ public sealed partial class MainWindow : Window
     private Dictionary<Button, double> CaptureToolbarButtonCenters()
     {
         Dictionary<Button, double> centers = new();
-        if (!_isMotionReady || !_animationsEnabled)
+        if (!_isMotionReady || !AnimationsEnabled)
         {
             return centers;
         }
@@ -526,7 +840,7 @@ public sealed partial class MainWindow : Window
 
     private void AnimateToolbarButtonPositions(IReadOnlyDictionary<Button, double> previousCenters)
     {
-        if (!_isMotionReady || !_animationsEnabled || previousCenters.Count == 0)
+        if (!_isMotionReady || !AnimationsEnabled || previousCenters.Count == 0)
         {
             ResetToolbarButtonTransforms();
             return;
@@ -625,7 +939,7 @@ public sealed partial class MainWindow : Window
 
     private Task AnimateCountdownSelectorItemRemovalAsync(string countdownId)
     {
-        if (!_isMotionReady || !_animationsEnabled)
+        if (!_isMotionReady || !AnimationsEnabled)
         {
             return Task.CompletedTask;
         }
@@ -928,6 +1242,18 @@ public sealed partial class MainWindow : Window
         return string.Format(CultureInfo.CurrentCulture, format, number);
     }
 
+    private Brush GetToolbarToggleForeground(bool isActive, bool isEnabled)
+    {
+        string resourceKey = !isEnabled
+            ? "TextFillColorDisabledBrush"
+            : isActive
+                ? "AccentFillColorDefaultBrush"
+                : "TextFillColorPrimaryBrush";
+
+        var fallbackColor = isEnabled ? Colors.White : Colors.Gray;
+        return GetResourceBrush(resourceKey, new SolidColorBrush(fallbackColor));
+    }
+
     private Brush GetToggleBrush(bool isEnabled)
     {
         string resourceKey = isEnabled ? "TextFillColorPrimaryBrush" : "TextFillColorDisabledBrush";
@@ -955,7 +1281,7 @@ public sealed partial class MainWindow : Window
     {
         if (!_isWindows11OrGreater)
         {
-            TileButton.Foreground = GetToggleBrush(_state.TileEnabled);
+            GlanceSurfaceIcon.Foreground = GetToolbarToggleForeground(_state.TileEnabled, TileButton.IsEnabled);
             string tileTooltip = GetString(_state.TileEnabled ? "TileButton/DisableTooltip" : "TileButton/EnableTooltip");
             ToolTipService.SetToolTip(TileButton, tileTooltip);
             AutomationProperties.SetName(TileButton, tileTooltip);
@@ -963,7 +1289,7 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        TileButton.Foreground = GetToggleBrush(true);
+        GlanceSurfaceIcon.Foreground = GetToolbarToggleForeground(isActive: false, TileButton.IsEnabled);
         ToolTipService.SetToolTip(TileButton, GetString("WidgetButton/Tooltip"));
         AutomationProperties.SetName(TileButton, GetString("WidgetButton/Tooltip"));
         AutomationProperties.SetHelpText(TileButton, GetString("WidgetButton/HelpText"));
@@ -975,6 +1301,9 @@ public sealed partial class MainWindow : Window
         {
             return;
         }
+
+        RefreshDesktopOverlayAvailability();
+        UpdateDesktopCountdown();
 
         if (_isWindows11OrGreater)
         {
@@ -1011,6 +1340,7 @@ public sealed partial class MainWindow : Window
     private async Task ApplyCommittedStateAsync(CountdownState state, bool reconcileStartupTask, bool refreshEditor = false)
     {
         _state = ApplyPreferencesToState(NormalizeStateForCurrentOs(state));
+        ReconcileDesktopOverlaySettingsWithState(saveIfChanged: true);
         SetDeleteButtonVisible(_state.CanRemoveCountdown);
         RootGrid.UpdateLayout();
 
@@ -1034,6 +1364,7 @@ public sealed partial class MainWindow : Window
 
         _settingsStore.Save(_state);
         SyncWidgets();
+        UpdateDesktopCountdown();
 
         if (!_isWindows11OrGreater)
         {
@@ -1081,6 +1412,101 @@ public sealed partial class MainWindow : Window
         _widgetSyncService.UpdatePinnedWidgets(_state, DateTimeOffset.Now, CreateDisplayText());
     }
 
+    private bool ApplyDesktopCountdownPreference()
+    {
+        IReadOnlyList<DesktopCountdownContent> contents = CreateDesktopCountdownContents();
+        if (contents.Count == 0)
+        {
+            _isAdjustingDesktopCountdown = false;
+            _desktopCountdownService.Hide();
+            return true;
+        }
+
+        if (!RefreshDesktopOverlayAvailability())
+        {
+            _isAdjustingDesktopCountdown = false;
+            _desktopCountdownService.Hide();
+            return false;
+        }
+
+        return _desktopCountdownService.ShowOrUpdate(contents);
+    }
+
+    private void UpdateDesktopCountdown()
+    {
+        IReadOnlyList<DesktopCountdownContent> contents = CreateDesktopCountdownContents();
+        if (contents.Count > 0)
+        {
+            if (!RefreshDesktopOverlayAvailability())
+            {
+                _desktopCountdownService.Hide();
+                return;
+            }
+
+            _desktopCountdownService.ShowOrUpdate(contents);
+            return;
+        }
+
+        _desktopCountdownService.Hide();
+    }
+
+    private IReadOnlyList<DesktopCountdownContent> CreateDesktopCountdownContents()
+    {
+        CountdownDisplayText displayText = CreateDisplayText();
+        DateTimeOffset now = DateTimeOffset.Now;
+        Dictionary<string, DesktopOverlaySettings> overlays = _preferences.DesktopOverlays
+            .Where(overlay => overlay.IsEnabled)
+            .ToDictionary(overlay => overlay.CountdownId, StringComparer.Ordinal);
+        List<DesktopCountdownContent> contents = new();
+        foreach (CountdownItem countdown in _state.Countdowns)
+        {
+            if (!overlays.TryGetValue(countdown.Id, out DesktopOverlaySettings? overlay))
+            {
+                continue;
+            }
+
+            int daysLeft = CountdownLogic.CalculateDaysLeft(countdown.TargetDate, now);
+            contents.Add(new DesktopCountdownContent(
+                countdown.Id,
+                displayText.FormatDaysLeft(daysLeft, CultureInfo.CurrentCulture),
+                displayText.FormatTitle(countdown.Title),
+                _preferences.DaysTextSize,
+                _preferences.TitleTextSize,
+                overlay.PositionX,
+                overlay.PositionY,
+                overlay.Scale,
+                overlay.Css));
+        }
+
+        return contents;
+    }
+
+    private DesktopOverlaySettings GetSelectedDesktopOverlay()
+    {
+        return _preferences.DesktopOverlays.FirstOrDefault(overlay => string.Equals(overlay.CountdownId, _state.SelectedCountdownId, StringComparison.Ordinal)) ??
+            new DesktopOverlaySettings(_state.SelectedCountdownId);
+    }
+
+    private bool HasEnabledDesktopOverlays()
+    {
+        HashSet<string> countdownIds = new(_state.Countdowns.Select(countdown => countdown.Id), StringComparer.Ordinal);
+        return _preferences.DesktopOverlays.Any(overlay => overlay.IsEnabled && countdownIds.Contains(overlay.CountdownId));
+    }
+
+    private void SaveDesktopOverlay(DesktopOverlaySettings overlay)
+    {
+        List<DesktopOverlaySettings> overlays = _preferences.DesktopOverlays
+            .Where(existing => !string.Equals(existing.CountdownId, overlay.CountdownId, StringComparison.Ordinal))
+            .ToList();
+        if (overlay.ShouldPersist)
+        {
+            overlays.Add(overlay);
+        }
+
+        _preferences = _preferences.With(desktopOverlays: overlays);
+        _settingsStore.SavePreferences(_preferences);
+    }
+
     private void ShowStartupNotificationSavedToast(bool toastEnabled)
     {
         CountdownDisplayText displayText = CreateDisplayText();
@@ -1105,7 +1531,10 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        await ApplyCommittedStateAsync(_state.SelectCountdown(countdownId), reconcileStartupTask: false, refreshEditor: true);
+        await ApplyCommittedStateAsync(
+            _state.SelectCountdown(countdownId),
+            reconcileStartupTask: false,
+            refreshEditor: true);
     }
 
     private void CountdownSelectorItem_PointerEntered(object sender, PointerRoutedEventArgs e)
@@ -1411,7 +1840,10 @@ public sealed partial class MainWindow : Window
             FormatNewCountdownTitle(_state.Countdowns.Count + 1),
             DateTimeOffset.Now.Date);
 
-        await ApplyCommittedStateAsync(_state.AddCountdown(newCountdown, selectCountdown: true), reconcileStartupTask: false, refreshEditor: true);
+        await ApplyCommittedStateAsync(
+            _state.AddCountdown(newCountdown, selectCountdown: true),
+            reconcileStartupTask: false,
+            refreshEditor: true);
     }
 
     private async void DeleteButton_Click(object sender, RoutedEventArgs e)
@@ -1424,7 +1856,10 @@ public sealed partial class MainWindow : Window
 
         string removedCountdownId = _state.SelectedCountdownId;
         await AnimateCountdownSelectorItemRemovalAsync(removedCountdownId);
-        await ApplyCommittedStateAsync(_state.RemoveCountdown(_state.SelectedCountdownId), reconcileStartupTask: true, refreshEditor: true);
+        await ApplyCommittedStateAsync(
+            _state.RemoveCountdown(_state.SelectedCountdownId),
+            reconcileStartupTask: true,
+            refreshEditor: true);
     }
 
     private void SettingsMenuItem_Click(object sender, RoutedEventArgs e)
@@ -1432,7 +1867,25 @@ public sealed partial class MainWindow : Window
         ShowSettingsPage();
     }
 
+    private void DesktopCountdownMenuItem_Click(object sender, RoutedEventArgs e)
+    {
+        if (!RefreshDesktopOverlayAvailability())
+        {
+            _startupNotificationService.ShowStatusToast(
+                GetString("Settings/DesktopCountdownFailedTitle"),
+                GetString("Settings/DesktopCountdownFailedContent"));
+            return;
+        }
+
+        ShowDesktopCountdownPage();
+    }
+
     private void SettingsBackButton_Click(object sender, RoutedEventArgs e)
+    {
+        ShowCountdownPage();
+    }
+
+    private void DesktopCountdownBackButton_Click(object sender, RoutedEventArgs e)
     {
         ShowCountdownPage();
     }
@@ -1441,17 +1894,41 @@ public sealed partial class MainWindow : Window
     {
         _widgetHelpFlyout?.Hide();
         _isSettingsVisible = true;
+        _isDesktopCountdownPageVisible = false;
+        StopDesktopCountdownAdjustment();
         HideCountdownSelectorImmediately(clearItems: true);
         MainContentScroller.Visibility = Visibility.Collapsed;
+        DesktopCountdownContentScroller.Visibility = Visibility.Collapsed;
         SettingsContentScroller.Visibility = Visibility.Visible;
         SettingsContentScroller.ChangeView(null, 0, null, true);
         UpdateSettingsControls();
     }
 
+    private void ShowDesktopCountdownPage()
+    {
+        if (!RefreshDesktopOverlayAvailability())
+        {
+            return;
+        }
+
+        _widgetHelpFlyout?.Hide();
+        _isSettingsVisible = false;
+        _isDesktopCountdownPageVisible = true;
+        HideCountdownSelectorImmediately(clearItems: true);
+        MainContentScroller.Visibility = Visibility.Collapsed;
+        SettingsContentScroller.Visibility = Visibility.Collapsed;
+        DesktopCountdownContentScroller.Visibility = Visibility.Visible;
+        DesktopCountdownContentScroller.ChangeView(null, 0, null, true);
+        UpdateSettingsControls();
+    }
+
     private void ShowCountdownPage()
     {
+        StopDesktopCountdownAdjustment();
         _isSettingsVisible = false;
+        _isDesktopCountdownPageVisible = false;
         SettingsContentScroller.Visibility = Visibility.Collapsed;
+        DesktopCountdownContentScroller.Visibility = Visibility.Collapsed;
         MainContentScroller.Visibility = Visibility.Visible;
         _isUpdatingControls = true;
         try
@@ -1521,6 +1998,19 @@ public sealed partial class MainWindow : Window
         ApplyDisplaySizePreference();
     }
 
+    private void ReduceMotionToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingSettingsControls)
+        {
+            return;
+        }
+
+        _preferences = _preferences.With(reduceMotion: ReduceMotionToggle.IsOn);
+        _settingsStore.SavePreferences(_preferences);
+        ApplyMotionPreference();
+        UpdateSettingsControls();
+    }
+
     private async void OpenAtStartupToggle_Toggled(object sender, RoutedEventArgs e)
     {
         if (_isUpdatingSettingsControls)
@@ -1543,6 +2033,141 @@ public sealed partial class MainWindow : Window
         _settingsStore.SavePreferences(_preferences);
         await ReconcileStartupTaskAsync();
         UpdateSettingsControls();
+    }
+
+    private void DesktopCountdownToggle_Toggled(object sender, RoutedEventArgs e)
+    {
+        if (_isUpdatingSettingsControls)
+        {
+            return;
+        }
+
+        DesktopOverlaySettings nextOverlay = GetSelectedDesktopOverlay().With(isEnabled: DesktopCountdownToggle.IsOn);
+        SaveDesktopOverlay(nextOverlay);
+        if (!nextOverlay.IsEnabled)
+        {
+            StopDesktopCountdownAdjustment(showDesktopCountdown: false);
+        }
+
+        if (!ApplyDesktopCountdownPreference())
+        {
+            SaveDesktopOverlay(nextOverlay.With(isEnabled: false));
+            _startupNotificationService.ShowStatusToast(
+                GetString("Settings/DesktopCountdownFailedTitle"),
+                GetString("Settings/DesktopCountdownFailedContent"));
+            UpdateSettingsControls();
+            return;
+        }
+
+        _settingsStore.SavePreferences(_preferences);
+        UpdateSettingsControls();
+    }
+
+    private void AdjustDesktopCountdownButton_Click(object sender, RoutedEventArgs e)
+    {
+        DesktopOverlaySettings selectedOverlay = GetSelectedDesktopOverlay();
+        if (!selectedOverlay.IsEnabled)
+        {
+            UpdateSettingsControls();
+            return;
+        }
+
+        if (_isAdjustingDesktopCountdown)
+        {
+            StopDesktopCountdownAdjustment();
+            UpdateSettingsControls();
+            return;
+        }
+
+        _isAdjustingDesktopCountdown = true;
+        if (!_desktopCountdownService.StartAdjusting(CreateDesktopCountdownContents(), _state.SelectedCountdownId, SaveDesktopCountdownPlacement))
+        {
+            _isAdjustingDesktopCountdown = false;
+            _startupNotificationService.ShowStatusToast(
+                GetString("Settings/DesktopCountdownFailedTitle"),
+                GetString("Settings/DesktopCountdownFailedContent"));
+        }
+
+        UpdateSettingsControls();
+    }
+
+    private void ResetDesktopCountdownPositionButton_Click(object sender, RoutedEventArgs e)
+    {
+        DesktopOverlaySettings overlay = GetSelectedDesktopOverlay().With(
+            positionX: CountdownPreferences.DefaultDesktopCountdownX,
+            positionY: CountdownPreferences.DefaultDesktopCountdownY,
+            scale: CountdownPreferences.DefaultDesktopCountdownScale);
+        SaveDesktopOverlay(overlay);
+        UpdateDesktopCountdown();
+        UpdateSettingsControls();
+    }
+
+    private void DesktopCountdownCssTextBox_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_isUpdatingSettingsControls)
+        {
+            return;
+        }
+
+        SaveDesktopOverlay(GetSelectedDesktopOverlay().With(css: DesktopCountdownCssTextBox.Text));
+        UpdateDesktopCountdown();
+    }
+
+    private void DesktopCountdownStyleTemplateButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string css })
+        {
+            return;
+        }
+
+        if (!string.Equals(DesktopCountdownCssTextBox.Text, css, StringComparison.Ordinal))
+        {
+            DesktopCountdownCssTextBox.Text = css;
+        }
+
+        DesktopCountdownCssTextBox.Focus(FocusState.Programmatic);
+        DesktopCountdownCssTextBox.Select(DesktopCountdownCssTextBox.Text.Length, 0);
+    }
+
+    private void ResetDesktopCountdownStyleButton_Click(object sender, RoutedEventArgs e)
+    {
+        SaveDesktopOverlay(GetSelectedDesktopOverlay().With(css: CountdownPreferences.DefaultDesktopCountdownCss));
+        UpdateSettingsControls();
+        UpdateDesktopCountdown();
+    }
+
+    private void SaveDesktopCountdownPlacement(double x, double y, double scale)
+    {
+        SaveDesktopOverlay(GetSelectedDesktopOverlay().With(positionX: x, positionY: y, scale: scale));
+    }
+
+    private void StopDesktopCountdownAdjustment(bool showDesktopCountdown = true)
+    {
+        if (!_isAdjustingDesktopCountdown)
+        {
+            return;
+        }
+
+        _isAdjustingDesktopCountdown = false;
+        _desktopCountdownService.StopAdjusting();
+        if (showDesktopCountdown)
+        {
+            UpdateDesktopCountdown();
+        }
+    }
+
+    private void MainWindow_Closed(object sender, WindowEventArgs args)
+    {
+        _desktopTrayService.Dispose();
+        _desktopCountdownService.Dispose();
+    }
+
+    private void ExitFromTray()
+    {
+        _isExiting = true;
+        _desktopTrayService.Dispose();
+        _desktopCountdownService.Dispose();
+        Application.Current.Exit();
     }
 
     private async Task<bool> TryApplyStartupBackedStateAsync(CountdownState nextState)
