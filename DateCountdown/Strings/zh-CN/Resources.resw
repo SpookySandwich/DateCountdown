@@ -127,7 +127,7 @@
     <value>倒计时</value>
   </data>
   <data name="AddCountdownButton.HelpText" xml:space="preserve">
-    <value>添加另一个倒计时。存在多个倒计时时会显示倒计时选择器。</value>
+    <value>创建一个新倒计时并选中它。</value>
   </data>
   <data name="AddCountdownButton.Tooltip" xml:space="preserve">
     <value>添加倒计时</value>
@@ -140,6 +140,33 @@
   </data>
   <data name="DeleteCountdownButton.Tooltip" xml:space="preserve">
     <value>删除倒计时</value>
+  </data>
+  <data name="EditCountdownButton.HelpText" xml:space="preserve">
+    <value>打开当前倒计时的内联编辑区。</value>
+  </data>
+  <data name="EditCountdownButton.Tooltip" xml:space="preserve">
+    <value>编辑倒计时</value>
+  </data>
+  <data name="Editor.AdvancedOptions" xml:space="preserve">
+    <value>时间与时区</value>
+  </data>
+  <data name="Editor.CancelButtonText" xml:space="preserve">
+    <value>取消</value>
+  </data>
+  <data name="Editor.CancelButtonHelpText" xml:space="preserve">
+    <value>关闭并放弃未保存的更改。</value>
+  </data>
+  <data name="Editor.SaveButtonText" xml:space="preserve">
+    <value>保存</value>
+  </data>
+  <data name="Editor.SaveButtonHelpText" xml:space="preserve">
+    <value>保存更改并关闭编辑区。</value>
+  </data>
+  <data name="Editor.Title.Edit" xml:space="preserve">
+    <value>编辑倒计时</value>
+  </data>
+  <data name="Editor.Title.New" xml:space="preserve">
+    <value>新建倒计时</value>
   </data>
   <data name="MainWindow.Title" xml:space="preserve">
     <value>日期倒计时</value>
@@ -163,11 +190,92 @@
   <data name="DaysLeftManyText" xml:space="preserve">
     <value>剩余{0}天</value>
   </data>
+  <data name="DueTodayText" xml:space="preserve">
+    <value>今天到期</value>
+  </data>
+  <data name="HoursLeftOneText" xml:space="preserve">
+    <value>剩余{0}小时</value>
+  </data>
+  <data name="HoursLeftManyText" xml:space="preserve">
+    <value>剩余{0}小时</value>
+  </data>
+  <data name="HourDisplayMode.DaysOnly" xml:space="preserve">
+    <value>天</value>
+  </data>
+  <data name="HourDisplayMode.HoursOnly" xml:space="preserve">
+    <value>小时</value>
+  </data>
+  <data name="HourDisplayMode.NearDeadline" xml:space="preserve">
+    <value>临近截止显示小时</value>
+  </data>
+  <data name="DaysHoursLeftOneDayOneHourText" xml:space="preserve">
+    <value>剩余{0}天{1}小时</value>
+  </data>
+  <data name="DaysHoursLeftOneDayManyHoursText" xml:space="preserve">
+    <value>剩余{0}天{1}小时</value>
+  </data>
+  <data name="DaysHoursLeftManyDaysOneHourText" xml:space="preserve">
+    <value>剩余{0}天{1}小时</value>
+  </data>
+  <data name="DaysHoursLeftManyDaysManyHoursText" xml:space="preserve">
+    <value>剩余{0}天{1}小时</value>
+  </data>
+  <data name="DaysOverdueOneText" xml:space="preserve">
+    <value>已过期{0}天</value>
+  </data>
+  <data name="DaysOverdueManyText" xml:space="preserve">
+    <value>已过期{0}天</value>
+  </data>
   <data name="TargetDatePicker.Name" xml:space="preserve">
     <value>目标日期</value>
   </data>
   <data name="TargetDatePicker.Header" xml:space="preserve">
     <value>日期</value>
+  </data>
+  <data name="TargetTimePicker.Name" xml:space="preserve">
+    <value>截止时间</value>
+  </data>
+  <data name="TargetTimePicker.Header" xml:space="preserve">
+    <value>时间</value>
+  </data>
+  <data name="TargetTimeZoneComboBox.Name" xml:space="preserve">
+    <value>截止时区</value>
+  </data>
+  <data name="TargetTimeZoneComboBox.Header" xml:space="preserve">
+    <value>时区</value>
+  </data>
+  <data name="TimeZone.OptionFormat" xml:space="preserve">
+    <value>{0}（{1}）</value>
+  </data>
+  <data name="TimeZone.LocalFormat" xml:space="preserve">
+    <value>本地（{0}）</value>
+  </data>
+  <data name="TimeZone.AnywhereOnEarth" xml:space="preserve">
+    <value>AOE / 地球任意处</value>
+  </data>
+  <data name="TimeZone.China" xml:space="preserve">
+    <value>中国</value>
+  </data>
+  <data name="TimeZone.USEastern" xml:space="preserve">
+    <value>美国东部</value>
+  </data>
+  <data name="TimeZone.USCentral" xml:space="preserve">
+    <value>美国中部</value>
+  </data>
+  <data name="TimeZone.USMountain" xml:space="preserve">
+    <value>美国山地</value>
+  </data>
+  <data name="TimeZone.USPacific" xml:space="preserve">
+    <value>美国太平洋</value>
+  </data>
+  <data name="TimeZone.Alaska" xml:space="preserve">
+    <value>阿拉斯加</value>
+  </data>
+  <data name="TimeZone.Hawaii" xml:space="preserve">
+    <value>夏威夷</value>
+  </data>
+  <data name="TimeZone.UTC" xml:space="preserve">
+    <value>UTC</value>
   </data>
   <data name="TileButton.HelpText" xml:space="preserve">
     <value>将倒计时添加到 Windows 开始磁贴，或从开始磁贴移除。更改会立即保存。</value>
@@ -221,6 +329,9 @@
   <data name="DesktopCountdownMenuItem.Text" xml:space="preserve">
     <value>桌面浮层</value>
   </data>
+  <data name="DesktopCountdownMenuItem.HelpText" xml:space="preserve">
+    <value>打开当前倒计时的桌面浮层设置。</value>
+  </data>
   <data name="SettingsButton.HelpText" xml:space="preserve">
     <value>打开排序、显示大小和启动行为设置。</value>
   </data>
@@ -251,6 +362,27 @@
   <data name="Settings.SortCountdownsDescription" xml:space="preserve">
     <value>优先显示最近的日期。</value>
   </data>
+  <data name="Settings.AutoDeleteExpiredCountdownsTitle" xml:space="preserve">
+    <value>自动删除过期倒计时</value>
+  </data>
+  <data name="Settings.AutoDeleteExpiredCountdownsDescription" xml:space="preserve">
+    <value>日期过去后移除对应倒计时。</value>
+  </data>
+  <data name="Settings.ToolbarLayoutTitle" xml:space="preserve">
+    <value>工具栏布局</value>
+  </data>
+  <data name="Settings.ToolbarLayoutSummaryDescription" xml:space="preserve">
+    <value>选择哪些操作显示在主工具栏。</value>
+  </data>
+  <data name="Settings.ToolbarLayoutPageTitle" xml:space="preserve">
+    <value>自定义工具栏</value>
+  </data>
+  <data name="Settings.ToolbarLayoutDescription" xml:space="preserve">
+    <value>拖到“更多”上方会显示在主工具栏；放在下方会收进“...”菜单。</value>
+  </data>
+  <data name="Settings.ToolbarLayoutMoreDivider" xml:space="preserve">
+    <value>更多菜单</value>
+  </data>
   <data name="Settings.AppearanceHeader" xml:space="preserve">
     <value>外观</value>
   </data>
@@ -265,6 +397,24 @@
   </data>
   <data name="Settings.TitleTextSizeLabel" xml:space="preserve">
     <value>事件标题</value>
+  </data>
+  <data name="Settings.HourDisplayModeTitle" xml:space="preserve">
+    <value>显示</value>
+  </data>
+  <data name="Settings.HourDisplayModeDescription" xml:space="preserve">
+    <value>“天”保持简洁；“临近截止显示小时”会在最后设置的天数内显示小时；“小时”始终显示总剩余小时。</value>
+  </data>
+  <data name="Settings.HoursDisplayThresholdDaysLabel" xml:space="preserve">
+    <value>最后</value>
+  </data>
+  <data name="Settings.HoursDisplayThresholdDaysSuffix" xml:space="preserve">
+    <value>天显示小时</value>
+  </data>
+  <data name="Settings.HoursDisplayThresholdDaysBoxName" xml:space="preserve">
+    <value>显示小时的最后天数</value>
+  </data>
+  <data name="Settings.HoursDisplayThresholdDaysHelpText" xml:space="preserve">
+    <value>当倒计时距离截止时间不超过这个天数时，改为显示小时。</value>
   </data>
   <data name="Settings.ReduceMotionTitle" xml:space="preserve">
     <value>减少动态效果</value>

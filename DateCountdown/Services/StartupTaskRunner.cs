@@ -24,16 +24,21 @@ internal sealed class StartupTaskRunner
     public async Task<bool> RunAsync()
     {
         DateTimeOffset now = DateTimeOffset.Now;
-        CountdownState state = _startupFeatureService.NormalizeState(_settingsStore.Load(now));
         CountdownPreferences preferences = _settingsStore.LoadPreferences();
+        CountdownState state = ApplyPreferences(
+            _startupFeatureService.NormalizeState(_settingsStore.Load(now)),
+            preferences,
+            now);
         CountdownDisplayText displayText = CreateDisplayText();
 
         foreach (CountdownItem countdown in state.Countdowns)
         {
             if (countdown.ToastEnabled)
             {
-                string daysLeft = displayText.FormatDaysLeft(
-                    CountdownLogic.CalculateDaysLeft(countdown.TargetDate, now),
+                string daysLeft = displayText.FormatCountdown(
+                    countdown.TargetDate,
+                    now,
+                    preferences,
                     CultureInfo.CurrentCulture);
                 _startupNotificationService.ShowStartupCountdownToast(
                     countdown.Id,
@@ -44,8 +49,10 @@ internal sealed class StartupTaskRunner
 
         if (!_isWindows11OrGreater && state.TileEnabled)
         {
-            string daysLeft = displayText.FormatDaysLeft(
-                CountdownLogic.CalculateDaysLeft(state.TargetDate, now),
+            string daysLeft = displayText.FormatCountdown(
+                state.TargetDate,
+                now,
+                preferences,
                 CultureInfo.CurrentCulture);
             await _startMenuService.UpdateLiveTileAsync(daysLeft, displayText.FormatTitle(state.Title));
         }
@@ -54,12 +61,37 @@ internal sealed class StartupTaskRunner
         return preferences.OpenWindowAtStartup;
     }
 
+    private CountdownState ApplyPreferences(CountdownState state, CountdownPreferences preferences, DateTimeOffset now)
+    {
+        if (!preferences.AutoDeleteExpiredCountdowns)
+        {
+            return state;
+        }
+
+        CountdownState nextState = state.RemoveExpiredCountdowns(now);
+        if (!ReferenceEquals(nextState, state))
+        {
+            _settingsStore.Save(nextState);
+        }
+
+        return nextState;
+    }
+
     private CountdownDisplayText CreateDisplayText()
     {
         return new CountdownDisplayText(
             GetString("AppName"),
             GetString("DaysLeftOneText"),
-            GetString("DaysLeftManyText"));
+            GetString("DaysLeftManyText"),
+            GetString("DueTodayText"),
+            GetString("HoursLeftOneText"),
+            GetString("HoursLeftManyText"),
+            GetString("DaysOverdueOneText"),
+            GetString("DaysOverdueManyText"),
+            GetString("DaysHoursLeftOneDayOneHourText"),
+            GetString("DaysHoursLeftOneDayManyHoursText"),
+            GetString("DaysHoursLeftManyDaysOneHourText"),
+            GetString("DaysHoursLeftManyDaysManyHoursText"));
     }
 
     private string GetString(string key)

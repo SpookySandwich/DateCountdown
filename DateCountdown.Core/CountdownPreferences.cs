@@ -13,6 +13,9 @@ namespace DateCountdown.Core
         public const double MinTitleTextSize = 12;
         public const double DefaultTitleTextSize = 14;
         public const double MaxTitleTextSize = 48;
+        public const int MinHoursDisplayThresholdDays = 0;
+        public const int DefaultHoursDisplayThresholdDays = 3;
+        public const int MaxHoursDisplayThresholdDays = 30;
         public const double DefaultDesktopCountdownX = 0.5;
         public const double DefaultDesktopCountdownY = 0.5;
         public const double MinDesktopCountdownScale = 0.25;
@@ -45,10 +48,16 @@ namespace DateCountdown.Core
             bool openWindowAtStartup = false,
             bool showDesktopCountdown = false,
             bool reduceMotion = false,
+            bool autoDeleteExpiredCountdowns = false,
+            bool experimentalFeaturesEnabled = false,
+            bool showHoursWithinThreshold = false,
+            int hoursDisplayThresholdDays = DefaultHoursDisplayThresholdDays,
+            CountdownHourDisplayMode? hourDisplayMode = null,
             double desktopCountdownX = DefaultDesktopCountdownX,
             double desktopCountdownY = DefaultDesktopCountdownY,
             double desktopCountdownScale = DefaultDesktopCountdownScale,
             string? desktopCountdownCss = null,
+            CountdownToolbarLayout? toolbarLayout = null,
             IEnumerable<DesktopOverlaySettings?>? desktopOverlays = null)
         {
             SortCountdownsByDaysLeft = sortCountdownsByDaysLeft;
@@ -57,10 +66,18 @@ namespace DateCountdown.Core
             OpenWindowAtStartup = openWindowAtStartup;
             ShowDesktopCountdown = showDesktopCountdown;
             ReduceMotion = reduceMotion;
+            AutoDeleteExpiredCountdowns = autoDeleteExpiredCountdowns;
+            ExperimentalFeaturesEnabled = experimentalFeaturesEnabled;
+            HourDisplayMode = hourDisplayMode ?? (showHoursWithinThreshold
+                ? CountdownHourDisplayMode.NearDeadline
+                : CountdownHourDisplayMode.DaysOnly);
+            ShowHoursWithinThreshold = HourDisplayMode == CountdownHourDisplayMode.NearDeadline;
+            HoursDisplayThresholdDays = CoerceHoursDisplayThresholdDays(hoursDisplayThresholdDays);
             DesktopCountdownX = CoerceDesktopCountdownCoordinate(desktopCountdownX, DefaultDesktopCountdownX);
             DesktopCountdownY = CoerceDesktopCountdownCoordinate(desktopCountdownY, DefaultDesktopCountdownY);
             DesktopCountdownScale = CoerceDesktopCountdownScale(desktopCountdownScale);
             DesktopCountdownCss = CoerceDesktopCountdownCss(desktopCountdownCss);
+            ToolbarLayout = toolbarLayout ?? CountdownToolbarLayout.Default;
             DesktopOverlays = new ReadOnlyCollection<DesktopOverlaySettings>(NormalizeDesktopOverlays(desktopOverlays).ToList());
         }
 
@@ -76,6 +93,16 @@ namespace DateCountdown.Core
 
         public bool ReduceMotion { get; }
 
+        public bool AutoDeleteExpiredCountdowns { get; }
+
+        public bool ExperimentalFeaturesEnabled { get; }
+
+        public bool ShowHoursWithinThreshold { get; }
+
+        public CountdownHourDisplayMode HourDisplayMode { get; }
+
+        public int HoursDisplayThresholdDays { get; }
+
         public double DesktopCountdownX { get; }
 
         public double DesktopCountdownY { get; }
@@ -83,6 +110,8 @@ namespace DateCountdown.Core
         public double DesktopCountdownScale { get; }
 
         public string DesktopCountdownCss { get; }
+
+        public CountdownToolbarLayout ToolbarLayout { get; }
 
         public IReadOnlyList<DesktopOverlaySettings> DesktopOverlays { get; }
 
@@ -93,12 +122,25 @@ namespace DateCountdown.Core
             bool? openWindowAtStartup = null,
             bool? showDesktopCountdown = null,
             bool? reduceMotion = null,
+            bool? autoDeleteExpiredCountdowns = null,
+            bool? experimentalFeaturesEnabled = null,
+            bool? showHoursWithinThreshold = null,
+            int? hoursDisplayThresholdDays = null,
+            CountdownHourDisplayMode? hourDisplayMode = null,
             double? desktopCountdownX = null,
             double? desktopCountdownY = null,
             double? desktopCountdownScale = null,
             string? desktopCountdownCss = null,
+            CountdownToolbarLayout? toolbarLayout = null,
             IEnumerable<DesktopOverlaySettings?>? desktopOverlays = null)
         {
+            CountdownHourDisplayMode nextHourDisplayMode = hourDisplayMode ??
+                (showHoursWithinThreshold.HasValue
+                    ? showHoursWithinThreshold.Value
+                        ? CountdownHourDisplayMode.NearDeadline
+                        : CountdownHourDisplayMode.DaysOnly
+                    : HourDisplayMode);
+
             return new CountdownPreferences(
                 sortCountdownsByDaysLeft ?? SortCountdownsByDaysLeft,
                 daysTextSize ?? DaysTextSize,
@@ -106,10 +148,16 @@ namespace DateCountdown.Core
                 openWindowAtStartup ?? OpenWindowAtStartup,
                 showDesktopCountdown ?? ShowDesktopCountdown,
                 reduceMotion ?? ReduceMotion,
+                autoDeleteExpiredCountdowns ?? AutoDeleteExpiredCountdowns,
+                experimentalFeaturesEnabled ?? ExperimentalFeaturesEnabled,
+                nextHourDisplayMode == CountdownHourDisplayMode.NearDeadline,
+                hoursDisplayThresholdDays ?? HoursDisplayThresholdDays,
+                nextHourDisplayMode,
                 desktopCountdownX ?? DesktopCountdownX,
                 desktopCountdownY ?? DesktopCountdownY,
                 desktopCountdownScale ?? DesktopCountdownScale,
                 desktopCountdownCss ?? DesktopCountdownCss,
+                toolbarLayout ?? ToolbarLayout,
                 desktopOverlays ?? DesktopOverlays);
         }
 
@@ -139,6 +187,11 @@ namespace DateCountdown.Core
                 Enum.TryParse(text, ignoreCase: true, out CountdownDisplaySize displaySize)
                     ? displaySize
                     : CountdownDisplaySize.Default;
+        }
+
+        public static int CoerceHoursDisplayThresholdDays(int value)
+        {
+            return Math.Clamp(value, MinHoursDisplayThresholdDays, MaxHoursDisplayThresholdDays);
         }
 
         private static double CoerceTextSize(double value, double minimum, double maximum, double fallback)

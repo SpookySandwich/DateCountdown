@@ -66,6 +66,7 @@
             Grid.Row="1"
             HorizontalScrollBarVisibility="Disabled"
             HorizontalScrollMode="Disabled"
+            SizeChanged="MainContentScroller_SizeChanged"
             VerticalScrollBarVisibility="Auto"
             VerticalScrollMode="Auto">
             <ScrollViewer.RenderTransform>
@@ -77,9 +78,15 @@
                 MinWidth="296"
                 Padding="32,36,32,40"
                 HorizontalAlignment="Center"
-                VerticalAlignment="Center"
+                VerticalAlignment="Top"
                 Spacing="26">
+                <StackPanel.ChildrenTransitions>
+                    <TransitionCollection>
+                        <RepositionThemeTransition />
+                    </TransitionCollection>
+                </StackPanel.ChildrenTransitions>
                 <StackPanel
+                    x:Name="CountdownDisplayPanel"
                     HorizontalAlignment="Stretch"
                     Spacing="4">
                     <TextBlock
@@ -93,9 +100,9 @@
                         FontSize="72"
                         FontWeight="Light"
                         HorizontalAlignment="Center"
+                        MaxLines="2"
                         TextAlignment="Center"
-                        TextTrimming="CharacterEllipsis"
-                        TextWrapping="NoWrap" />
+                        TextWrapping="Wrap" />
                     <TextBlock
                         x:Name="TextBlockTitle"
                         MaxWidth="360"
@@ -110,18 +117,105 @@
                 </StackPanel>
 
                 <StackPanel
+                    x:Name="InlineEditorPanel"
                     HorizontalAlignment="Stretch"
-                    Spacing="8">
+                    MaxWidth="360"
+                    Opacity="0"
+                    Spacing="10"
+                    Visibility="Collapsed"
+                    AutomationProperties.AutomationId="InlineCountdownEditor">
+                    <StackPanel.ChildrenTransitions>
+                        <TransitionCollection>
+                            <RepositionThemeTransition />
+                        </TransitionCollection>
+                    </StackPanel.ChildrenTransitions>
+                    <TextBlock
+                        x:Name="EditorTitleText"
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        HorizontalAlignment="Center"
+                        Opacity="0.68"
+                        TextAlignment="Center"
+                        TextWrapping="WrapWholeWords"
+                        Visibility="Collapsed" />
+                    <TextBox
+                        x:Name="TextBoxTitle"
+                        AutomationProperties.AutomationId="CountdownTitleTextBox"
+                        HorizontalAlignment="Stretch"
+                        TextChanged="TextBoxTitle_TextChanged"
+                        TextWrapping="Wrap" />
+                    <Grid
+                        MinHeight="32"
+                        VerticalAlignment="Center">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock
+                            x:Name="DateEditorHeaderText"
+                            VerticalAlignment="Center"
+                            FontSize="15"
+                            TextWrapping="WrapWholeWords" />
+                        <StackPanel
+                            x:Name="EditorExtraOptionsButtons"
+                            Grid.Column="1"
+                            HorizontalAlignment="Right"
+                            Orientation="Horizontal"
+                            Spacing="6">
+                            <ToggleButton
+                                x:Name="EditorTimeOptionsButton"
+                                Width="34"
+                                Height="32"
+                                Padding="0"
+                                AutomationProperties.AutomationId="EditorTimeOptionsButton"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="EditorTimeOptionsButton_Click"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}">
+                                <FontIcon
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    FontSize="15"
+                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                    Glyph="&#xE823;" />
+                            </ToggleButton>
+                            <ToggleButton
+                                x:Name="EditorTimeZoneOptionsButton"
+                                Width="34"
+                                Height="32"
+                                Padding="0"
+                                AutomationProperties.AutomationId="EditorTimeZoneOptionsButton"
+                                Background="Transparent"
+                                BorderThickness="0"
+                                Click="EditorTimeZoneOptionsButton_Click"
+                                Foreground="{ThemeResource TextFillColorPrimaryBrush}">
+                                <FontIcon
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    FontSize="15"
+                                    Foreground="{ThemeResource TextFillColorPrimaryBrush}"
+                                    Glyph="&#xE774;" />
+                            </ToggleButton>
+                        </StackPanel>
+                    </Grid>
                     <CalendarDatePicker
                         x:Name="DatePickerTargetDate"
                         AutomationProperties.AutomationId="TargetDatePicker"
                         DateChanged="DatePickerTargetDate_SelectedDateChanged"
                         HorizontalAlignment="Stretch" />
-                    <TextBox
-                        x:Name="TextBoxTitle"
-                        AutomationProperties.AutomationId="CountdownTitleTextBox"
-                        TextChanged="TextBoxTitle_TextChanged"
-                        TextWrapping="Wrap" />
+                    <TimePicker
+                        x:Name="TimePickerTargetTime"
+                        AutomationProperties.AutomationId="TargetTimePicker"
+                        ClockIdentifier="24HourClock"
+                        HorizontalAlignment="Stretch"
+                        Opacity="0"
+                        TimeChanged="TimePickerTargetTime_TimeChanged"
+                        Visibility="Collapsed" />
+                    <ComboBox
+                        x:Name="ComboBoxTargetTimeZone"
+                        AutomationProperties.AutomationId="TargetTimeZoneComboBox"
+                        HorizontalAlignment="Stretch"
+                        Opacity="0"
+                        SelectionChanged="ComboBoxTargetTimeZone_SelectionChanged"
+                        Visibility="Collapsed" />
                 </StackPanel>
 
                 <StackPanel
@@ -197,6 +291,66 @@
                                 Glyph="&#xE74D;" />
                         </Button>
                         <Button
+                            x:Name="CancelEditorButton"
+                            Width="40"
+                            Height="40"
+                            Opacity="0"
+                            Padding="0"
+                            AutomationProperties.AutomationId="CancelEditorButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="CancelEditorButton_Click"
+                            IsHitTestVisible="False"
+                            IsTabStop="False"
+                            Visibility="Collapsed">
+                            <Button.RenderTransform>
+                                <TranslateTransform />
+                            </Button.RenderTransform>
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="16"
+                                Glyph="&#xE711;" />
+                        </Button>
+                        <Button
+                            x:Name="SaveEditorButton"
+                            Width="40"
+                            Height="40"
+                            Opacity="0"
+                            Padding="0"
+                            AutomationProperties.AutomationId="SaveEditorButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="SaveEditorButton_Click"
+                            IsHitTestVisible="False"
+                            IsTabStop="False"
+                            Visibility="Collapsed">
+                            <Button.RenderTransform>
+                                <TranslateTransform />
+                            </Button.RenderTransform>
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="16"
+                                Glyph="&#xE73E;" />
+                        </Button>
+                        <Button
+                            x:Name="EditButton"
+                            Width="40"
+                            Height="40"
+                            Padding="0"
+                            AutomationProperties.AutomationId="EditCountdownButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="EditButton_Click">
+                            <Button.RenderTransform>
+                                <TranslateTransform />
+                            </Button.RenderTransform>
+                            <FontIcon
+                                x:Name="EditButtonIcon"
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="16"
+                                Glyph="&#xE70F;" />
+                        </Button>
+                        <Button
                             x:Name="AddButton"
                             Width="40"
                             Height="40"
@@ -209,9 +363,27 @@
                                 <TranslateTransform />
                             </Button.RenderTransform>
                             <FontIcon
+                                x:Name="AddButtonIcon"
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                 FontSize="16"
                                 Glyph="&#xE710;" />
+                        </Button>
+                        <Button
+                            x:Name="DesktopOverlayButton"
+                            Width="40"
+                            Height="40"
+                            Padding="0"
+                            AutomationProperties.AutomationId="DesktopOverlayButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="DesktopCountdownButton_Click">
+                            <Button.RenderTransform>
+                                <TranslateTransform />
+                            </Button.RenderTransform>
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="16"
+                                Glyph="&#xE7F4;" />
                         </Button>
                         <Button
                             x:Name="MoreButton"
@@ -227,12 +399,49 @@
                             <Button.Flyout>
                                 <MenuFlyout>
                                     <MenuFlyoutItem
-                                        x:Name="SettingsMenuItem"
-                                        Click="SettingsMenuItem_Click">
+                                        x:Name="NotifyMenuItem"
+                                        Click="NotifyMenuItem_Click">
                                         <MenuFlyoutItem.Icon>
                                             <FontIcon
                                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
-                                                Glyph="&#xE713;" />
+                                                Glyph="&#xE7E7;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem
+                                        x:Name="TileMenuItem"
+                                        Click="TileMenuItem_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon
+                                                x:Name="GlanceSurfaceMenuIcon"
+                                                FontFamily="Segoe MDL2 Assets"
+                                                Glyph="&#xECA5;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem
+                                        x:Name="DeleteMenuItem"
+                                        Click="DeleteMenuItem_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon
+                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                Glyph="&#xE74D;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem
+                                        x:Name="EditMenuItem"
+                                        Click="EditMenuItem_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon
+                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                                Glyph="&#xE70F;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutItem
+                                        x:Name="AddMenuItem"
+                                        Click="AddMenuItem_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon
+                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                            Glyph="&#xE710;" />
                                         </MenuFlyoutItem.Icon>
                                     </MenuFlyoutItem>
                                     <MenuFlyoutItem
@@ -242,6 +451,16 @@
                                             <FontIcon
                                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                                 Glyph="&#xE7F4;" />
+                                        </MenuFlyoutItem.Icon>
+                                    </MenuFlyoutItem>
+                                    <MenuFlyoutSeparator x:Name="ToolbarActionsSeparator" />
+                                    <MenuFlyoutItem
+                                        x:Name="SettingsMenuItem"
+                                        Click="SettingsMenuItem_Click">
+                                        <MenuFlyoutItem.Icon>
+                                            <FontIcon
+                                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                            Glyph="&#xE713;" />
                                         </MenuFlyoutItem.Icon>
                                     </MenuFlyoutItem>
                                 </MenuFlyout>
@@ -325,18 +544,124 @@
                                     Spacing="2">
                                     <TextBlock
                                         x:Name="SortCountdownsTitleText"
-                                        FontWeight="SemiBold" />
+                                        FontWeight="SemiBold"
+                                        TextWrapping="WrapWholeWords" />
                                 </StackPanel>
                                 <ToggleSwitch
                                     x:Name="SortCountdownsToggle"
                                     Grid.Column="2"
                                     Margin="16,0,0,0"
+                                    AutomationProperties.AutomationId="SortCountdownsToggle"
                                     MinWidth="0"
                                     OffContent=""
                                     OnContent=""
                                     Toggled="SortCountdownsToggle_Toggled" />
                             </Grid>
                         </Border>
+                        <Border
+                            Background="{ThemeResource ControlFillColorDefaultBrush}"
+                            CornerRadius="6">
+                            <Grid Padding="16" RowSpacing="3">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <FontIcon
+                                    Grid.Column="0"
+                                    Grid.RowSpan="2"
+                                    FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                    FontSize="18"
+                                    Glyph="&#xE74D;"
+                                    VerticalAlignment="Center" />
+                                <TextBlock
+                                    x:Name="AutoDeleteExpiredCountdownsTitleText"
+                                    Grid.Column="1"
+                                    FontWeight="SemiBold"
+                                    TextWrapping="WrapWholeWords" />
+                                <TextBlock
+                                    x:Name="AutoDeleteExpiredCountdownsDescriptionText"
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    HorizontalAlignment="Left"
+                                    MaxWidth="440"
+                                    Opacity="0.72"
+                                    TextWrapping="WrapWholeWords" />
+                                <ToggleSwitch
+                                    x:Name="AutoDeleteExpiredCountdownsToggle"
+                                    Grid.Column="2"
+                                    Grid.RowSpan="2"
+                                    Margin="16,0,0,0"
+                                    AutomationProperties.AutomationId="AutoDeleteExpiredCountdownsToggle"
+                                    MinWidth="0"
+                                    OffContent=""
+                                    OnContent=""
+                                    VerticalAlignment="Center"
+                                    Toggled="AutoDeleteExpiredCountdownsToggle_Toggled" />
+                            </Grid>
+                        </Border>
+                        <Button
+                            x:Name="ToolbarLayoutEntryButton"
+                            Padding="0"
+                            HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Stretch"
+                            AutomationProperties.AutomationId="ToolbarLayoutEntryButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="ToolbarLayoutEntryButton_Click">
+                            <Border
+                                HorizontalAlignment="Stretch"
+                                Background="{ThemeResource ControlFillColorDefaultBrush}"
+                                CornerRadius="6">
+                                <Grid
+                                    MinHeight="72"
+                                    Padding="16"
+                                    RowSpacing="3">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon
+                                        Grid.Column="0"
+                                        Grid.RowSpan="2"
+                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                        FontSize="18"
+                                        Glyph="&#xE700;"
+                                        VerticalAlignment="Center" />
+                                    <TextBlock
+                                        x:Name="ToolbarLayoutTitleText"
+                                        Grid.Column="1"
+                                        FontWeight="SemiBold"
+                                        TextWrapping="WrapWholeWords" />
+                                    <TextBlock
+                                        x:Name="ToolbarLayoutDescriptionText"
+                                        Grid.Row="1"
+                                        Grid.Column="1"
+                                        HorizontalAlignment="Left"
+                                        MaxWidth="440"
+                                        Opacity="0.72"
+                                        TextWrapping="WrapWholeWords" />
+                                    <FontIcon
+                                        Grid.Column="2"
+                                        Grid.RowSpan="2"
+                                        Margin="16,0,0,0"
+                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                        FontSize="14"
+                                        Glyph="&#xE974;"
+                                        Opacity="0.72"
+                                        VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+                        </Button>
                     </StackPanel>
 
                     <StackPanel Spacing="8">
@@ -383,9 +708,9 @@
                                             HorizontalAlignment="Center"
                                             FontFamily="Segoe UI Variable Display, Segoe UI"
                                             FontWeight="Light"
+                                            MaxLines="2"
                                             TextAlignment="Center"
-                                            TextTrimming="CharacterEllipsis"
-                                            TextWrapping="NoWrap" />
+                                            TextWrapping="Wrap" />
                                         <TextBlock
                                             x:Name="SettingsPreviewTitleText"
                                             HorizontalAlignment="Center"
@@ -439,6 +764,73 @@
                         <Border
                             Background="{ThemeResource ControlFillColorDefaultBrush}"
                             CornerRadius="6">
+                            <StackPanel
+                                Padding="16"
+                                Spacing="12">
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="40" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <FontIcon
+                                        Grid.Column="0"
+                                        FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                        FontSize="18"
+                                        Glyph="&#xE823;"
+                                        VerticalAlignment="Center" />
+                                    <TextBlock
+                                        x:Name="HourDisplayModeTitleText"
+                                        Grid.Column="1"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        TextWrapping="WrapWholeWords" />
+                                    <ComboBox
+                                        x:Name="HourDisplayModeComboBox"
+                                        Grid.Column="2"
+                                        Margin="16,0,0,0"
+                                        MinWidth="220"
+                                        AutomationProperties.AutomationId="HourDisplayModeComboBox"
+                                        DisplayMemberPath="DisplayName"
+                                        SelectionChanged="HourDisplayModeComboBox_SelectionChanged"
+                                        VerticalAlignment="Center"
+                                        HorizontalAlignment="Right" />
+                                </Grid>
+                                <Grid
+                                    x:Name="HoursDisplayThresholdPanel"
+                                    Margin="40,0,0,0"
+                                    ColumnSpacing="12">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="128" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <TextBlock
+                                        x:Name="HoursDisplayThresholdDaysLabelText"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        TextWrapping="WrapWholeWords" />
+                                    <NumberBox
+                                        x:Name="HoursDisplayThresholdDaysBox"
+                                        Grid.Column="1"
+                                        AcceptsExpression="False"
+                                        AutomationProperties.AutomationId="HoursDisplayThresholdDaysBox"
+                                        LargeChange="5"
+                                        SmallChange="1"
+                                        SpinButtonPlacementMode="Inline"
+                                        ValueChanged="HoursDisplayThresholdDaysBox_ValueChanged" />
+                                    <TextBlock
+                                        x:Name="HoursDisplayThresholdDaysSuffixText"
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        FontWeight="SemiBold"
+                                        TextWrapping="WrapWholeWords" />
+                                </Grid>
+                            </StackPanel>
+                        </Border>
+                        <Border
+                            Background="{ThemeResource ControlFillColorDefaultBrush}"
+                            CornerRadius="6">
                             <Grid Padding="16">
                                 <Grid.ColumnDefinitions>
                                     <ColumnDefinition Width="40" />
@@ -455,7 +847,8 @@
                                     x:Name="ReduceMotionTitleText"
                                     Grid.Column="1"
                                     VerticalAlignment="Center"
-                                    FontWeight="SemiBold" />
+                                    FontWeight="SemiBold"
+                                    TextWrapping="WrapWholeWords" />
                                 <ToggleSwitch
                                     x:Name="ReduceMotionToggle"
                                     Grid.Column="2"
@@ -494,7 +887,8 @@
                                     Spacing="2">
                                     <TextBlock
                                         x:Name="OpenAtStartupTitleText"
-                                        FontWeight="SemiBold" />
+                                        FontWeight="SemiBold"
+                                        TextWrapping="WrapWholeWords" />
                                 </StackPanel>
                                 <ToggleSwitch
                                     x:Name="OpenAtStartupToggle"
@@ -506,6 +900,80 @@
                                     Toggled="OpenAtStartupToggle_Toggled" />
                             </Grid>
                         </Border>
+                    </StackPanel>
+
+                    <StackPanel Spacing="8">
+                        <TextBlock
+                            x:Name="SettingsExperimentalHeaderText"
+                            FontSize="14"
+                            FontWeight="SemiBold" />
+                        <Grid>
+                            <Border
+                                Background="{ThemeResource ControlFillColorDefaultBrush}"
+                                CornerRadius="6" />
+                            <Grid Padding="16" RowSpacing="3">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="40" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+                                <Viewbox
+                                    Grid.Column="0"
+                                    Grid.RowSpan="2"
+                                    Width="20"
+                                    Height="20"
+                                    VerticalAlignment="Center"
+                                    AutomationProperties.AccessibilityView="Raw">
+                                    <Canvas
+                                        Width="24"
+                                        Height="24">
+                                        <Path
+                                            Data="M9,3 L15,3 M11,3 L11,8 L6,18 C5.6,18.8 6.2,20 7.1,20 L16.9,20 C17.8,20 18.4,18.8 18,18 L13,8 L13,3 M8,15 L16,15"
+                                            Stroke="{ThemeResource AccentTextFillColorPrimaryBrush}"
+                                            StrokeEndLineCap="Round"
+                                            StrokeLineJoin="Round"
+                                            StrokeStartLineCap="Round"
+                                            StrokeThickness="2" />
+                                    </Canvas>
+                                </Viewbox>
+                                <TextBlock
+                                    x:Name="ExperimentalFeaturesTitleText"
+                                    Grid.Column="1"
+                                    VerticalAlignment="Center"
+                                    FontWeight="SemiBold"
+                                    TextWrapping="WrapWholeWords" />
+                                <TextBlock
+                                    x:Name="ExperimentalFeaturesDescriptionText"
+                                    Grid.Row="1"
+                                    Grid.Column="1"
+                                    HorizontalAlignment="Left"
+                                    MaxWidth="440"
+                                    Opacity="0.72"
+                                    TextWrapping="WrapWholeWords" />
+                                <ToggleSwitch
+                                    x:Name="ExperimentalFeaturesToggle"
+                                    Grid.Column="2"
+                                    Grid.RowSpan="2"
+                                    Margin="16,0,0,0"
+                                    AutomationProperties.AutomationId="ExperimentalFeaturesToggle"
+                                    MinWidth="0"
+                                    OffContent=""
+                                    OnContent=""
+                                    VerticalAlignment="Center"
+                                    Toggled="ExperimentalFeaturesToggle_Toggled" />
+                            </Grid>
+                            <Border
+                                x:Name="ExperimentalFeaturesCardBorder"
+                                BorderBrush="{ThemeResource AccentFillColorDefaultBrush}"
+                                BorderThickness="1"
+                                CornerRadius="6"
+                                IsHitTestVisible="False"
+                                Opacity="0" />
+                        </Grid>
                     </StackPanel>
 
                     <StackPanel Spacing="8">
@@ -549,6 +1017,74 @@
                             Padding="0"
                             NavigateUri="https://github.com/SpookySandwich/DateCountdown" />
                     </StackPanel>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <ScrollViewer
+            x:Name="ToolbarLayoutContentScroller"
+            Grid.Row="1"
+            Canvas.ZIndex="2"
+            Padding="18,4,18,32"
+            HorizontalScrollBarVisibility="Disabled"
+            HorizontalScrollMode="Disabled"
+            SizeChanged="ToolbarLayoutContentScroller_SizeChanged"
+            VerticalScrollBarVisibility="Auto"
+            VerticalScrollMode="Auto"
+            Visibility="Collapsed">
+            <StackPanel
+                x:Name="ToolbarLayoutContentPanel"
+                MaxWidth="640"
+                MinWidth="360"
+                HorizontalAlignment="Center"
+                Spacing="24">
+                <StackPanel Spacing="16">
+                    <StackPanel
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            x:Name="ToolbarLayoutBackButton"
+                            Width="36"
+                            Height="36"
+                            Padding="0"
+                            AutomationProperties.AutomationId="ToolbarLayoutBackButton"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            Click="ToolbarLayoutBackButton_Click">
+                            <FontIcon
+                                FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
+                                FontSize="16"
+                                Glyph="&#xE72B;" />
+                        </Button>
+                        <TextBlock
+                            x:Name="ToolbarLayoutPageTitleText"
+                            VerticalAlignment="Center"
+                            FontSize="22"
+                            FontWeight="SemiBold" />
+                    </StackPanel>
+
+                    <TextBlock
+                        x:Name="ToolbarLayoutPageDescriptionText"
+                        HorizontalAlignment="Left"
+                        MaxWidth="540"
+                        Opacity="0.72"
+                        TextWrapping="WrapWholeWords" />
+
+                    <Border
+                        Background="{ThemeResource ControlFillColorDefaultBrush}"
+                        CornerRadius="6">
+                        <ListView
+                            x:Name="ToolbarLayoutListView"
+                            Padding="10"
+                            AllowDrop="True"
+                            AutomationProperties.AutomationId="ToolbarLayoutListView"
+                            CanDragItems="True"
+                            CanReorderItems="True"
+                            DragItemsCompleted="ToolbarLayoutListView_DragItemsCompleted"
+                            DragItemsStarting="ToolbarLayoutListView_DragItemsStarting"
+                            IsSwipeEnabled="True"
+                            SelectionMode="None" />
+                    </Border>
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>
@@ -627,6 +1163,7 @@
                                 Grid.Row="1"
                                 Grid.Column="1"
                                 AutomationProperties.AutomationId="DesktopCountdownDescriptionText"
+                                HorizontalAlignment="Left"
                                 MaxWidth="440"
                                 Opacity="0.72"
                                 TextWrapping="WrapWholeWords" />

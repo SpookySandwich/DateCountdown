@@ -7,7 +7,31 @@ namespace DateCountdown.Core
     {
         public static int CalculateDaysLeft(DateTimeOffset targetDate, DateTimeOffset now)
         {
-            return (int)(targetDate.Date - now.Date).TotalDays;
+            TimeSpan remaining = targetDate.ToUniversalTime() - now.ToUniversalTime();
+            if (remaining > TimeSpan.Zero)
+            {
+                return (int)Math.Ceiling(remaining.TotalDays);
+            }
+
+            if (remaining < TimeSpan.Zero)
+            {
+                return -(int)Math.Ceiling(Math.Abs(remaining.TotalDays));
+            }
+
+            return 0;
+        }
+
+        public static int CalculateHoursLeft(DateTimeOffset targetDate, DateTimeOffset now)
+        {
+            TimeSpan remaining = targetDate.ToUniversalTime() - now.ToUniversalTime();
+            return remaining > TimeSpan.Zero
+                ? (int)Math.Ceiling(remaining.TotalHours)
+                : 0;
+        }
+
+        public static bool IsExpired(DateTimeOffset targetDate, DateTimeOffset now)
+        {
+            return targetDate.ToUniversalTime() < now.ToUniversalTime();
         }
 
         public static DateTimeOffset ReadDateValue(object? value, DateTimeOffset fallback)

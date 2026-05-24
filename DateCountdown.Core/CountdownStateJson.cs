@@ -33,6 +33,7 @@ namespace DateCountdown.Core
                     Id = countdown.Id,
                     Title = countdown.Title,
                     TargetDate = countdown.TargetDate,
+                    TargetTimeZoneId = countdown.TargetTimeZoneId,
                     ToastEnabled = countdown.ToastEnabled
                 });
             }
@@ -96,11 +97,17 @@ namespace DateCountdown.Core
                 return false;
             }
 
+            string? targetTimeZoneId = TryGetString(storedItem, "targetTimeZoneId");
+            DateTimeOffset normalizedTargetDate = string.IsNullOrWhiteSpace(targetTimeZoneId)
+                ? CountdownTimeZone.MigrateLegacyDateOnlyTarget(targetDate, targetTimeZoneId)
+                : targetDate;
+
             countdown = new CountdownItem(
                 id,
                 TryGetString(storedItem, "title"),
-                targetDate,
-                TryGetBool(storedItem, "toastEnabled"));
+                normalizedTargetDate,
+                TryGetBool(storedItem, "toastEnabled"),
+                targetTimeZoneId);
             return true;
         }
 
@@ -153,6 +160,8 @@ namespace DateCountdown.Core
             public string? Title { get; set; }
 
             public DateTimeOffset TargetDate { get; set; }
+
+            public string? TargetTimeZoneId { get; set; }
 
             public bool ToastEnabled { get; set; }
         }

@@ -11,8 +11,10 @@ namespace DateCountdown.Windowing;
 
 internal sealed class WindowChromeService
 {
-    private const int CompactWindowHeight = 460;
-    private const int CompactWindowWidth = 420;
+    private const int DefaultWindowHeight = 620;
+    private const int DefaultWindowWidth = 460;
+    private const int MinimumWindowHeight = 460;
+    private const int MinimumWindowWidth = 420;
     private const uint MinimumWindowSizeSubclassId = 1;
     private const uint WmGetMinMaxInfo = 0x0024;
 
@@ -77,8 +79,8 @@ internal sealed class WindowChromeService
         {
             MinMaxInfo minMaxInfo = Marshal.PtrToStructure<MinMaxInfo>(lParam);
             double scale = GetWindowScale(hwnd);
-            minMaxInfo.MinTrackSize.X = (int)Math.Round(CompactWindowWidth * scale);
-            minMaxInfo.MinTrackSize.Y = (int)Math.Round(CompactWindowHeight * scale);
+            minMaxInfo.MinTrackSize.X = (int)Math.Round(MinimumWindowWidth * scale);
+            minMaxInfo.MinTrackSize.Y = (int)Math.Round(MinimumWindowHeight * scale);
             Marshal.StructureToPtr(minMaxInfo, lParam, false);
             return IntPtr.Zero;
         }
@@ -90,8 +92,8 @@ internal sealed class WindowChromeService
     {
         IntPtr hwnd = WindowNative.GetWindowHandle(window);
         double scale = GetWindowScale(hwnd);
-        int width = (int)Math.Round(CompactWindowWidth * scale);
-        int height = (int)Math.Round(CompactWindowHeight * scale);
+        int width = (int)Math.Round(DefaultWindowWidth * scale);
+        int height = (int)Math.Round(DefaultWindowHeight * scale);
 
         DisplayArea displayArea = DisplayArea.GetFromWindowId(window.AppWindow.Id, DisplayAreaFallback.Nearest);
         RectInt32 workArea = displayArea.WorkArea;

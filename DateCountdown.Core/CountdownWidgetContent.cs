@@ -115,37 +115,55 @@ namespace DateCountdown.Core
 }";
         }
 
-        public static string BuildDataJson(string title, DateTimeOffset targetDate, DateTimeOffset now, CountdownDisplayText displayText)
+        public static string BuildDataJson(
+            string title,
+            DateTimeOffset targetDate,
+            DateTimeOffset now,
+            CountdownDisplayText displayText,
+            CountdownPreferences? preferences = null)
         {
             return BuildDataJson(
                 new CountdownState(title, targetDate, tileEnabled: false, toastEnabled: false),
                 now,
-                displayText);
+                displayText,
+                CountdownWidgetSize.Large,
+                preferences ?? CountdownPreferences.Default);
         }
 
-        public static string BuildDataJson(CountdownState state, DateTimeOffset now, CountdownDisplayText displayText)
+        public static string BuildDataJson(
+            CountdownState state,
+            DateTimeOffset now,
+            CountdownDisplayText displayText,
+            CountdownPreferences? preferences = null)
         {
-            return BuildDataJson(state, now, displayText, CountdownWidgetSize.Large);
+            return BuildDataJson(state, now, displayText, CountdownWidgetSize.Large, preferences ?? CountdownPreferences.Default);
         }
 
-        public static string BuildDataJson(CountdownState state, DateTimeOffset now, CountdownDisplayText displayText, CountdownWidgetSize size)
+        public static string BuildDataJson(
+            CountdownState state,
+            DateTimeOffset now,
+            CountdownDisplayText displayText,
+            CountdownWidgetSize size,
+            CountdownPreferences? preferences = null)
         {
+            preferences ??= CountdownPreferences.Default;
             CountdownItem selectedCountdown = state.SelectedCountdown;
-            int daysLeft = CountdownLogic.CalculateDaysLeft(selectedCountdown.TargetDate, now);
             string displayTitle = displayText.FormatTitle(selectedCountdown.Title);
-            string targetDateText = selectedCountdown.TargetDate.Date.ToString("d", CultureInfo.CurrentCulture);
+            string targetDateText = CountdownTimeZone.FormatTargetDateTime(
+                selectedCountdown.TargetDate,
+                selectedCountdown.TargetTimeZoneId,
+                CultureInfo.CurrentCulture);
             IReadOnlyList<CountdownItem> listItems = GetListItems(state, size);
 
             StringBuilder builder = new StringBuilder(160 + listItems.Count * 80);
             builder.Append("{" +
-                "\"daysText\":\"" + JsonEscape(displayText.FormatDaysLeft(daysLeft)) + "\"," +
+                "\"daysText\":\"" + JsonEscape(displayText.FormatCountdown(selectedCountdown.TargetDate, now, preferences)) + "\"," +
                 "\"title\":\"" + JsonEscape(displayTitle) + "\"," +
                 "\"targetDateText\":\"" + JsonEscape(targetDateText) + "\"");
 
             for (int i = 0; i < listItems.Count; i++)
             {
                 CountdownItem item = listItems[i];
-                int itemDaysLeft = CountdownLogic.CalculateDaysLeft(item.TargetDate, now);
                 builder.Append(",\"item");
                 builder.Append(i.ToString(CultureInfo.InvariantCulture));
                 builder.Append("Title\":\"");
@@ -153,7 +171,7 @@ namespace DateCountdown.Core
                 builder.Append("\",\"item");
                 builder.Append(i.ToString(CultureInfo.InvariantCulture));
                 builder.Append("DaysText\":\"");
-                builder.Append(JsonEscape(displayText.FormatDaysLeft(itemDaysLeft)));
+                builder.Append(JsonEscape(displayText.FormatCountdown(item.TargetDate, now, preferences)));
                 builder.Append("\"");
             }
 
@@ -239,7 +257,7 @@ namespace DateCountdown.Core
 
             return state.Countdowns
                 .Where(item => !string.Equals(item.Id, state.SelectedCountdownId, StringComparison.Ordinal))
-                .OrderBy(item => item.TargetDate.Date)
+                .OrderBy(item => item.TargetDate.UtcDateTime)
                 .Take(maxListItems)
                 .ToList();
         }

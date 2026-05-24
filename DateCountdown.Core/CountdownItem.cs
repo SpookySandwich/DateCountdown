@@ -10,12 +10,18 @@ namespace DateCountdown.Core
         public const int MaxTitleLength = 80;
         private const int MaxIdLength = 128;
 
-        public CountdownItem(string? id, string? title, DateTimeOffset targetDate, bool toastEnabled = false)
+        public CountdownItem(
+            string? id,
+            string? title,
+            DateTimeOffset targetDate,
+            bool toastEnabled = false,
+            string? targetTimeZoneId = null)
         {
             Id = NormalizeId(id);
             Title = NormalizeTitle(title);
             TargetDate = targetDate;
             ToastEnabled = toastEnabled;
+            TargetTimeZoneId = CountdownTimeZone.NormalizeTimeZoneId(targetTimeZoneId);
         }
 
         public string Id { get; }
@@ -26,13 +32,20 @@ namespace DateCountdown.Core
 
         public bool ToastEnabled { get; }
 
-        public CountdownItem With(string? title = null, DateTimeOffset? targetDate = null, bool? toastEnabled = null)
+        public string TargetTimeZoneId { get; }
+
+        public CountdownItem With(
+            string? title = null,
+            DateTimeOffset? targetDate = null,
+            bool? toastEnabled = null,
+            string? targetTimeZoneId = null)
         {
             return new CountdownItem(
                 Id,
                 title ?? Title,
                 targetDate ?? TargetDate,
-                toastEnabled ?? ToastEnabled);
+                toastEnabled ?? ToastEnabled,
+                targetTimeZoneId ?? TargetTimeZoneId);
         }
 
         public static string NormalizeTitle(string? title)

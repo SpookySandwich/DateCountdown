@@ -12,7 +12,7 @@ public sealed class CountdownStateJsonTests
     {
         CountdownItem[] countdowns =
         {
-            new("first", "Launch", new DateTimeOffset(2026, 5, 8, 0, 0, 0, TimeSpan.Zero), toastEnabled: true),
+            new("first", "Launch", new DateTimeOffset(2026, 5, 8, 23, 59, 0, TimeSpan.FromHours(-12)), toastEnabled: true, targetTimeZoneId: CountdownTimeZone.AnywhereOnEarthId),
             new("second", "Trip", new DateTimeOffset(2026, 6, 1, 0, 0, 0, TimeSpan.Zero), toastEnabled: false)
         };
 
@@ -23,11 +23,28 @@ public sealed class CountdownStateJsonTests
         Assert.Equal("first", result[0].Id);
         Assert.Equal("Launch", result[0].Title);
         Assert.Equal(countdowns[0].TargetDate, result[0].TargetDate);
+        Assert.Equal(CountdownTimeZone.AnywhereOnEarthId, result[0].TargetTimeZoneId);
         Assert.True(result[0].ToastEnabled);
         Assert.Equal("second", result[1].Id);
         Assert.Equal("Trip", result[1].Title);
         Assert.Equal(countdowns[1].TargetDate, result[1].TargetDate);
         Assert.False(result[1].ToastEnabled);
+    }
+
+    [Fact]
+    public void DeserializeCountdowns_MigratesLegacyDateOnlyTargetsToEndOfDay()
+    {
+        string json = """
+            [
+              { "id": "legacy", "title": "Legacy", "targetDate": "2026-05-08T00:00:00+00:00" }
+            ]
+            """;
+
+        var result = CountdownStateJson.DeserializeCountdowns(json).ToList();
+
+        Assert.Single(result);
+        Assert.Equal(new DateTime(2026, 5, 8), CountdownTimeZone.GetDateInTimeZone(result[0].TargetDate, result[0].TargetTimeZoneId));
+        Assert.Equal(CountdownTimeZone.DefaultDeadlineTimeOfDay, CountdownTimeZone.GetTimeOfDayInTimeZone(result[0].TargetDate, result[0].TargetTimeZoneId));
     }
 
     [Theory]

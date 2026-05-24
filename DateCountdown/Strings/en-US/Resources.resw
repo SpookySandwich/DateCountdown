@@ -127,7 +127,7 @@
     <value>Countdown</value>
   </data>
   <data name="AddCountdownButton.HelpText" xml:space="preserve">
-    <value>Add another countdown. A countdown picker appears when more than one countdown exists.</value>
+    <value>Create a new countdown and select it.</value>
   </data>
   <data name="AddCountdownButton.Tooltip" xml:space="preserve">
     <value>Add countdown</value>
@@ -140,6 +140,33 @@
   </data>
   <data name="DeleteCountdownButton.Tooltip" xml:space="preserve">
     <value>Delete countdown</value>
+  </data>
+  <data name="EditCountdownButton.HelpText" xml:space="preserve">
+    <value>Open the inline editor for the selected countdown.</value>
+  </data>
+  <data name="EditCountdownButton.Tooltip" xml:space="preserve">
+    <value>Edit countdown</value>
+  </data>
+  <data name="Editor.AdvancedOptions" xml:space="preserve">
+    <value>Time &amp; zone</value>
+  </data>
+  <data name="Editor.CancelButtonText" xml:space="preserve">
+    <value>Cancel</value>
+  </data>
+  <data name="Editor.CancelButtonHelpText" xml:space="preserve">
+    <value>Close without saving changes.</value>
+  </data>
+  <data name="Editor.SaveButtonText" xml:space="preserve">
+    <value>Save</value>
+  </data>
+  <data name="Editor.SaveButtonHelpText" xml:space="preserve">
+    <value>Save changes and close the editor.</value>
+  </data>
+  <data name="Editor.Title.Edit" xml:space="preserve">
+    <value>Edit countdown</value>
+  </data>
+  <data name="Editor.Title.New" xml:space="preserve">
+    <value>New countdown</value>
   </data>
   <data name="MainWindow.Title" xml:space="preserve">
     <value>Date Countdown</value>
@@ -163,11 +190,92 @@
   <data name="DaysLeftManyText" xml:space="preserve">
     <value>{0} days left</value>
   </data>
+  <data name="DueTodayText" xml:space="preserve">
+    <value>Due today</value>
+  </data>
+  <data name="HoursLeftOneText" xml:space="preserve">
+    <value>{0} hour left</value>
+  </data>
+  <data name="HoursLeftManyText" xml:space="preserve">
+    <value>{0} hours left</value>
+  </data>
+  <data name="HourDisplayMode.DaysOnly" xml:space="preserve">
+    <value>Days</value>
+  </data>
+  <data name="HourDisplayMode.HoursOnly" xml:space="preserve">
+    <value>Hours</value>
+  </data>
+  <data name="HourDisplayMode.NearDeadline" xml:space="preserve">
+    <value>Hours near deadline</value>
+  </data>
+  <data name="DaysHoursLeftOneDayOneHourText" xml:space="preserve">
+    <value>{0} day {1} hour left</value>
+  </data>
+  <data name="DaysHoursLeftOneDayManyHoursText" xml:space="preserve">
+    <value>{0} day {1} hours left</value>
+  </data>
+  <data name="DaysHoursLeftManyDaysOneHourText" xml:space="preserve">
+    <value>{0} days {1} hour left</value>
+  </data>
+  <data name="DaysHoursLeftManyDaysManyHoursText" xml:space="preserve">
+    <value>{0} days {1} hours left</value>
+  </data>
+  <data name="DaysOverdueOneText" xml:space="preserve">
+    <value>{0} day overdue</value>
+  </data>
+  <data name="DaysOverdueManyText" xml:space="preserve">
+    <value>{0} days overdue</value>
+  </data>
   <data name="TargetDatePicker.Name" xml:space="preserve">
     <value>Target date</value>
   </data>
   <data name="TargetDatePicker.Header" xml:space="preserve">
     <value>Date</value>
+  </data>
+  <data name="TargetTimePicker.Name" xml:space="preserve">
+    <value>Target time</value>
+  </data>
+  <data name="TargetTimePicker.Header" xml:space="preserve">
+    <value>Time</value>
+  </data>
+  <data name="TargetTimeZoneComboBox.Name" xml:space="preserve">
+    <value>Target time zone</value>
+  </data>
+  <data name="TargetTimeZoneComboBox.Header" xml:space="preserve">
+    <value>Time zone</value>
+  </data>
+  <data name="TimeZone.OptionFormat" xml:space="preserve">
+    <value>{0} ({1})</value>
+  </data>
+  <data name="TimeZone.LocalFormat" xml:space="preserve">
+    <value>Local ({0})</value>
+  </data>
+  <data name="TimeZone.AnywhereOnEarth" xml:space="preserve">
+    <value>Anywhere on Earth</value>
+  </data>
+  <data name="TimeZone.China" xml:space="preserve">
+    <value>China</value>
+  </data>
+  <data name="TimeZone.USEastern" xml:space="preserve">
+    <value>US Eastern</value>
+  </data>
+  <data name="TimeZone.USCentral" xml:space="preserve">
+    <value>US Central</value>
+  </data>
+  <data name="TimeZone.USMountain" xml:space="preserve">
+    <value>US Mountain</value>
+  </data>
+  <data name="TimeZone.USPacific" xml:space="preserve">
+    <value>US Pacific</value>
+  </data>
+  <data name="TimeZone.Alaska" xml:space="preserve">
+    <value>Alaska</value>
+  </data>
+  <data name="TimeZone.Hawaii" xml:space="preserve">
+    <value>Hawaii</value>
+  </data>
+  <data name="TimeZone.UTC" xml:space="preserve">
+    <value>UTC</value>
   </data>
   <data name="TileButton.HelpText" xml:space="preserve">
     <value>Add or remove the countdown from the Windows Start tile. Changes are saved immediately.</value>
@@ -220,6 +328,9 @@
   <data name="DesktopCountdownMenuItem.Text" xml:space="preserve">
     <value>Desktop overlay</value>
   </data>
+  <data name="DesktopCountdownMenuItem.HelpText" xml:space="preserve">
+    <value>Open desktop overlay settings for the selected countdown.</value>
+  </data>
   <data name="SettingsButton.HelpText" xml:space="preserve">
     <value>Open app settings for sorting, display size, and startup behavior.</value>
   </data>
@@ -250,6 +361,27 @@
   <data name="Settings.SortCountdownsDescription" xml:space="preserve">
     <value>Show soonest dates first.</value>
   </data>
+  <data name="Settings.AutoDeleteExpiredCountdownsTitle" xml:space="preserve">
+    <value>Auto-delete past countdowns</value>
+  </data>
+  <data name="Settings.AutoDeleteExpiredCountdownsDescription" xml:space="preserve">
+    <value>Remove countdowns after their date passes.</value>
+  </data>
+  <data name="Settings.ToolbarLayoutTitle" xml:space="preserve">
+    <value>Toolbar layout</value>
+  </data>
+  <data name="Settings.ToolbarLayoutSummaryDescription" xml:space="preserve">
+    <value>Choose which actions stay on the main toolbar.</value>
+  </data>
+  <data name="Settings.ToolbarLayoutPageTitle" xml:space="preserve">
+    <value>Customize toolbar</value>
+  </data>
+  <data name="Settings.ToolbarLayoutDescription" xml:space="preserve">
+    <value>Drag actions above More to show them on the main toolbar. Keep quieter actions below it.</value>
+  </data>
+  <data name="Settings.ToolbarLayoutMoreDivider" xml:space="preserve">
+    <value>More menu</value>
+  </data>
   <data name="Settings.AppearanceHeader" xml:space="preserve">
     <value>Appearance</value>
   </data>
@@ -264,6 +396,24 @@
   </data>
   <data name="Settings.TitleTextSizeLabel" xml:space="preserve">
     <value>Event title</value>
+  </data>
+  <data name="Settings.HourDisplayModeTitle" xml:space="preserve">
+    <value>Display</value>
+  </data>
+  <data name="Settings.HourDisplayModeDescription" xml:space="preserve">
+    <value>Days keeps countdowns simple. Hours near deadline switches to hours during the final configured days. Hours always shows total hours.</value>
+  </data>
+  <data name="Settings.HoursDisplayThresholdDaysLabel" xml:space="preserve">
+    <value>Show hours in final</value>
+  </data>
+  <data name="Settings.HoursDisplayThresholdDaysSuffix" xml:space="preserve">
+    <value>days</value>
+  </data>
+  <data name="Settings.HoursDisplayThresholdDaysBoxName" xml:space="preserve">
+    <value>Final days to show hours</value>
+  </data>
+  <data name="Settings.HoursDisplayThresholdDaysHelpText" xml:space="preserve">
+    <value>When the countdown is within this many days of the deadline, show hours instead of days.</value>
   </data>
   <data name="Settings.ReduceMotionTitle" xml:space="preserve">
     <value>Reduce motion</value>

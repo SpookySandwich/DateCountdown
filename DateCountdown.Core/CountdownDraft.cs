@@ -4,12 +4,18 @@ namespace DateCountdown.Core
 {
     public sealed class CountdownDraft
     {
-        public CountdownDraft(string? title, DateTimeOffset? targetDate, bool tileEnabled, bool toastEnabled)
+        public CountdownDraft(
+            string? title,
+            DateTimeOffset? targetDate,
+            bool tileEnabled,
+            bool toastEnabled,
+            string? targetTimeZoneId = null)
         {
             Title = CountdownItem.NormalizeTitle(title);
             TargetDate = targetDate;
             TileEnabled = tileEnabled;
             ToastEnabled = toastEnabled;
+            TargetTimeZoneId = CountdownTimeZone.NormalizeTimeZoneId(targetTimeZoneId);
         }
 
         public string Title { get; }
@@ -20,10 +26,12 @@ namespace DateCountdown.Core
 
         public bool ToastEnabled { get; }
 
+        public string TargetTimeZoneId { get; }
+
         public bool CanCommit(DateTimeOffset now)
         {
             return TargetDate.HasValue &&
-                TargetDate.Value.Date >= now.Date &&
+                TargetDate.Value.ToUniversalTime() >= now.ToUniversalTime() &&
                 !string.IsNullOrWhiteSpace(Title);
         }
 
@@ -35,7 +43,7 @@ namespace DateCountdown.Core
                 return false;
             }
 
-            state = new CountdownState(Title, TargetDate!.Value, TileEnabled, ToastEnabled);
+            state = new CountdownState(Title, TargetDate!.Value, TileEnabled, ToastEnabled, TargetTimeZoneId);
             return true;
         }
 
@@ -51,7 +59,8 @@ namespace DateCountdown.Core
                 title: Title,
                 targetDate: TargetDate!.Value,
                 tileEnabled: TileEnabled,
-                toastEnabled: ToastEnabled);
+                toastEnabled: ToastEnabled,
+                targetTimeZoneId: TargetTimeZoneId);
             return true;
         }
     }

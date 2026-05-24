@@ -169,6 +169,40 @@ public sealed class CountdownStateTests
     }
 
     [Fact]
+    public void WithDefaultTitles_NamesOnlyBlankCountdowns()
+    {
+        CountdownState state = new CountdownState(
+            new[]
+            {
+                new CountdownItem("first", string.Empty, DateTimeOffset.UnixEpoch, toastEnabled: true),
+                new CountdownItem("second", "Custom", DateTimeOffset.UnixEpoch.AddDays(1), toastEnabled: false),
+                new CountdownItem("third", "   ", DateTimeOffset.UnixEpoch.AddDays(2), toastEnabled: true)
+            },
+            selectedCountdownId: "third",
+            tileEnabled: true,
+            toastEnabled: false);
+
+        CountdownState updated = state.WithDefaultTitles(number => $"Countdown {number}");
+
+        Assert.Equal(new[] { "Countdown 1", "Custom", "Countdown 3" }, updated.Countdowns.Select(item => item.Title));
+        Assert.Equal("third", updated.SelectedCountdownId);
+        Assert.Equal("Countdown 3", updated.Title);
+        Assert.True(updated.TileEnabled);
+        Assert.True(updated.Countdowns[0].ToastEnabled);
+        Assert.True(updated.Countdowns[2].ToastEnabled);
+    }
+
+    [Fact]
+    public void WithDefaultTitles_ReturnsSameStateWhenTitlesExist()
+    {
+        CountdownState state = new("First", DateTimeOffset.UnixEpoch, tileEnabled: false, toastEnabled: false);
+
+        CountdownState updated = state.WithDefaultTitles(number => $"Countdown {number}");
+
+        Assert.Same(state, updated);
+    }
+
+    [Fact]
     public void MultiItemConstructor_IgnoresNullCountdowns()
     {
         CountdownState state = new CountdownState(
@@ -332,6 +366,58 @@ public sealed class CountdownStateTests
         Assert.Equal("first", updated.SelectedCountdownId);
         Assert.Equal("First", updated.Title);
         Assert.False(updated.CanRemoveCountdown);
+    }
+
+    [Fact]
+    public void RemoveExpiredCountdowns_RemovesPastDatesAndKeepsActiveSettings()
+    {
+        DateTimeOffset now = new(2026, 4, 25, 12, 0, 0, TimeSpan.Zero);
+        CountdownState state = new CountdownState(
+            new[]
+            {
+                new CountdownItem("expired", "Expired", now.AddDays(-1), toastEnabled: true),
+                new CountdownItem("today", "Today", now, toastEnabled: false),
+                new CountdownItem("later", "Later", now.AddDays(2), toastEnabled: true)
+            },
+            selectedCountdownId: "expired",
+            tileEnabled: true,
+            toastEnabled: false);
+
+        CountdownState updated = state.RemoveExpiredCountdowns(now);
+
+        Assert.Equal(new[] { "today", "later" }, updated.Countdowns.Select(item => item.Id));
+        Assert.Equal("today", updated.SelectedCountdownId);
+        Assert.True(updated.TileEnabled);
+        Assert.False(updated.Countdowns[0].ToastEnabled);
+        Assert.True(updated.Countdowns[1].ToastEnabled);
+    }
+
+    [Fact]
+    public void RemoveExpiredCountdowns_CreatesFreshDefaultWhenAllCountdownsExpired()
+    {
+        DateTimeOffset now = new(2026, 4, 25, 12, 0, 0, TimeSpan.FromHours(8));
+        CountdownState state = new CountdownState(
+            new[] { new CountdownItem("expired", "Expired", now.AddDays(-1), toastEnabled: true) },
+            selectedCountdownId: "expired",
+            tileEnabled: true,
+            toastEnabled: false);
+
+        CountdownState updated = state.RemoveExpiredCountdowns(now);
+
+        Assert.Single(updated.Countdowns);
+        Assert.Equal(string.Empty, updated.Title);
+        Assert.Equal(CountdownTimeZone.CreateDefaultTargetDate(now), updated.TargetDate);
+        Assert.False(updated.TileEnabled);
+        Assert.False(updated.AnyToastEnabled);
+    }
+
+    [Fact]
+    public void RemoveExpiredCountdowns_ReturnsSameStateWhenNothingExpired()
+    {
+        DateTimeOffset now = new(2026, 4, 25, 12, 0, 0, TimeSpan.Zero);
+        CountdownState state = new("Today", now, tileEnabled: false, toastEnabled: false);
+
+        Assert.Same(state, state.RemoveExpiredCountdowns(now));
     }
 
     [Fact]

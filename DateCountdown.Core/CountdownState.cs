@@ -7,9 +7,14 @@ namespace DateCountdown.Core
 {
     public sealed class CountdownState
     {
-        public CountdownState(string title, DateTimeOffset targetDate, bool tileEnabled, bool toastEnabled)
+        public CountdownState(
+            string title,
+            DateTimeOffset targetDate,
+            bool tileEnabled,
+            bool toastEnabled,
+            string? targetTimeZoneId = null)
             : this(
-                new[] { new CountdownItem(CountdownItem.DefaultId, title, targetDate) },
+                new[] { new CountdownItem(CountdownItem.DefaultId, title, targetDate, targetTimeZoneId: targetTimeZoneId) },
                 CountdownItem.DefaultId,
                 tileEnabled,
                 toastEnabled)
@@ -57,6 +62,8 @@ namespace DateCountdown.Core
 
         public DateTimeOffset TargetDate => SelectedCountdown.TargetDate;
 
+        public string TargetTimeZoneId => SelectedCountdown.TargetTimeZoneId;
+
         public bool TileEnabled { get; }
 
         public bool ToastEnabled => SelectedCountdown.ToastEnabled;
@@ -70,9 +77,14 @@ namespace DateCountdown.Core
             return new CountdownState(string.Empty, targetDate, false, false);
         }
 
-        public CountdownState With(string? title = null, DateTimeOffset? targetDate = null, bool? tileEnabled = null, bool? toastEnabled = null)
+        public CountdownState With(
+            string? title = null,
+            DateTimeOffset? targetDate = null,
+            bool? tileEnabled = null,
+            bool? toastEnabled = null,
+            string? targetTimeZoneId = null)
         {
-            CountdownItem selectedCountdown = SelectedCountdown.With(title, targetDate, toastEnabled);
+            CountdownItem selectedCountdown = SelectedCountdown.With(title, targetDate, toastEnabled, targetTimeZoneId);
             List<CountdownItem> countdowns = Countdowns
                 .Select(item => string.Equals(item.Id, selectedCountdown.Id, StringComparison.Ordinal) ? selectedCountdown : item)
                 .ToList();
@@ -95,7 +107,7 @@ namespace DateCountdown.Core
             if (Countdowns.Any(item => string.Equals(item.Id, id, StringComparison.Ordinal)))
             {
                 id = Guid.NewGuid().ToString("N");
-                countdown = new CountdownItem(id, countdown.Title, countdown.TargetDate, countdown.ToastEnabled);
+                countdown = new CountdownItem(id, countdown.Title, countdown.TargetDate, countdown.ToastEnabled, countdown.TargetTimeZoneId);
             }
 
             List<CountdownItem> countdowns = Countdowns.ToList();
@@ -106,6 +118,29 @@ namespace DateCountdown.Core
                 selectCountdown ? countdown.Id : SelectedCountdownId,
                 TileEnabled,
                 toastEnabled: false);
+        }
+
+        public CountdownState WithDefaultTitles(Func<int, string> titleFactory)
+        {
+            ArgumentNullException.ThrowIfNull(titleFactory);
+
+            List<CountdownItem>? countdowns = null;
+            for (int index = 0; index < Countdowns.Count; index++)
+            {
+                CountdownItem countdown = Countdowns[index];
+                if (!string.IsNullOrWhiteSpace(countdown.Title))
+                {
+                    countdowns?.Add(countdown);
+                    continue;
+                }
+
+                countdowns ??= Countdowns.Take(index).ToList();
+                countdowns.Add(countdown.With(title: titleFactory(index + 1)));
+            }
+
+            return countdowns is null
+                ? this
+                : new CountdownState(countdowns, SelectedCountdownId, TileEnabled, toastEnabled: false);
         }
 
         public CountdownState SelectCountdown(string countdownId)
@@ -145,10 +180,29 @@ namespace DateCountdown.Core
             return new CountdownState(countdowns, selectedCountdownId, TileEnabled, toastEnabled: false);
         }
 
+        public CountdownState RemoveExpiredCountdowns(DateTimeOffset now)
+        {
+            List<CountdownItem> activeCountdowns = Countdowns
+                .Where(item => !CountdownLogic.IsExpired(item.TargetDate, now))
+                .ToList();
+
+            if (activeCountdowns.Count == Countdowns.Count)
+            {
+                return this;
+            }
+
+            if (activeCountdowns.Count == 0)
+            {
+                return CreateDefault(CountdownTimeZone.CreateDefaultTargetDate(now));
+            }
+
+            return new CountdownState(activeCountdowns, SelectedCountdownId, TileEnabled, toastEnabled: false);
+        }
+
         public CountdownState SortByDaysLeft(DateTimeOffset now)
         {
             List<CountdownItem> countdowns = Countdowns
-                .OrderBy(item => CountdownLogic.CalculateDaysLeft(item.TargetDate, now))
+                .OrderBy(item => item.TargetDate.UtcDateTime)
                 .ThenBy(item => item.Title, StringComparer.CurrentCultureIgnoreCase)
                 .ThenBy(item => item.Id, StringComparer.Ordinal)
                 .ToList();

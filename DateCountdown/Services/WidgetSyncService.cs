@@ -14,7 +14,11 @@ internal sealed class WidgetSyncService
         _isEnabled = isEnabled;
     }
 
-    public void UpdatePinnedWidgets(CountdownState state, DateTimeOffset now, CountdownDisplayText displayText)
+    public void UpdatePinnedWidgets(
+        CountdownState state,
+        DateTimeOffset now,
+        CountdownDisplayText displayText,
+        CountdownPreferences preferences)
     {
         if (!_isEnabled)
         {
@@ -38,7 +42,7 @@ internal sealed class WidgetSyncService
                     WidgetUpdateRequestOptions options = new(widgetInfo.WidgetContext.Id)
                     {
                         Template = CountdownWidgetContent.BuildTemplateJson(state, size),
-                        Data = CountdownWidgetContent.BuildDataJson(state, now, displayText, size),
+                        Data = CountdownWidgetContent.BuildDataJson(state, now, displayText, size, preferences),
                         CustomState = state.SelectedCountdownId
                     };
 

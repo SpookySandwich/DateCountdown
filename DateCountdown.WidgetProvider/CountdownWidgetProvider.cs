@@ -84,12 +84,14 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
     {
         try
         {
-            CountdownState state = ReadState();
+            DateTimeOffset now = DateTimeOffset.Now;
+            CountdownPreferences preferences = ReadPreferences();
+            CountdownState state = ApplyPreferences(ReadState(), preferences, now);
             CountdownWidgetSize size = ToCountdownWidgetSize(widgetContext.Size);
             WidgetUpdateRequestOptions options = new(widgetContext.Id)
             {
                 Template = CountdownWidgetContent.BuildTemplateJson(state, size),
-                Data = CountdownWidgetContent.BuildDataJson(state, DateTimeOffset.Now, CreateDisplayText(), size),
+                Data = CountdownWidgetContent.BuildDataJson(state, now, CreateDisplayText(), size, preferences),
                 CustomState = state.SelectedCountdownId
             };
 
@@ -121,9 +123,39 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
         }
 
         string title = localSettings.Values[CountdownSettingsKeys.Title] as string ?? string.Empty;
-        DateTimeOffset targetDate = CountdownLogic.ReadDateValue(localSettings.Values[CountdownSettingsKeys.TargetDate], DateTimeOffset.Now);
+        string? targetTimeZoneId = localSettings.Values[CountdownSettingsKeys.TargetTimeZoneId] as string;
+        DateTimeOffset targetDate = CountdownLogic.ReadDateValue(
+            localSettings.Values[CountdownSettingsKeys.TargetDate],
+            CountdownTimeZone.CreateDefaultTargetDate(DateTimeOffset.Now));
+        if (string.IsNullOrWhiteSpace(targetTimeZoneId))
+        {
+            targetDate = CountdownTimeZone.MigrateLegacyDateOnlyTarget(targetDate, targetTimeZoneId);
+        }
 
-        return new CountdownState(title, targetDate, tileEnabled: false, toastEnabled: false);
+        return new CountdownState(title, targetDate, tileEnabled: false, toastEnabled: false, targetTimeZoneId);
+    }
+
+    private static CountdownPreferences ReadPreferences()
+    {
+        ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
+        CountdownHourDisplayMode hourDisplayMode = ReadHourDisplayMode(localSettings) ??
+            (ReadBool(localSettings, CountdownSettingsKeys.ShowHoursWithinThreshold)
+                ? CountdownHourDisplayMode.NearDeadline
+                : CountdownHourDisplayMode.DaysOnly);
+
+        return new CountdownPreferences(
+            autoDeleteExpiredCountdowns: ReadBool(localSettings, CountdownSettingsKeys.AutoDeleteExpiredCountdowns),
+            showHoursWithinThreshold: hourDisplayMode == CountdownHourDisplayMode.NearDeadline,
+            hoursDisplayThresholdDays: ReadInt(localSettings, CountdownSettingsKeys.HoursDisplayThresholdDays) ??
+                CountdownPreferences.DefaultHoursDisplayThresholdDays,
+            hourDisplayMode: hourDisplayMode);
+    }
+
+    private static CountdownState ApplyPreferences(CountdownState state, CountdownPreferences preferences, DateTimeOffset now)
+    {
+        return preferences.AutoDeleteExpiredCountdowns
+            ? state.RemoveExpiredCountdowns(now)
+            : state;
     }
 
     private static CountdownDisplayText CreateDisplayText()
@@ -131,7 +163,43 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
         return new CountdownDisplayText(
             GetString("AppName"),
             GetString("DaysLeftOneText"),
-            GetString("DaysLeftManyText"));
+            GetString("DaysLeftManyText"),
+            GetString("DueTodayText"),
+            GetString("HoursLeftOneText"),
+            GetString("HoursLeftManyText"),
+            GetString("DaysOverdueOneText"),
+            GetString("DaysOverdueManyText"),
+            GetString("DaysHoursLeftOneDayOneHourText"),
+            GetString("DaysHoursLeftOneDayManyHoursText"),
+            GetString("DaysHoursLeftManyDaysOneHourText"),
+            GetString("DaysHoursLeftManyDaysManyHoursText"));
+    }
+
+    private static bool ReadBool(ApplicationDataContainer localSettings, string key, bool fallback = false)
+    {
+        return localSettings.Values[key] is bool value ? value : fallback;
+    }
+
+    private static int? ReadInt(ApplicationDataContainer localSettings, string key)
+    {
+        object? value = localSettings.Values[key];
+        return value switch
+        {
+            int intValue => intValue,
+            long longValue => (int)Math.Clamp(longValue, int.MinValue, int.MaxValue),
+            double doubleValue when double.IsFinite(doubleValue) => (int)Math.Round(doubleValue),
+            float floatValue when double.IsFinite(floatValue) => (int)Math.Round(floatValue),
+            string text when int.TryParse(text, out int parsedValue) => parsedValue,
+            _ => null
+        };
+    }
+
+    private static CountdownHourDisplayMode? ReadHourDisplayMode(ApplicationDataContainer localSettings)
+    {
+        return localSettings.Values[CountdownSettingsKeys.HourDisplayMode] is string text &&
+            Enum.TryParse(text, ignoreCase: true, out CountdownHourDisplayMode mode)
+                ? mode
+                : null;
     }
 
     private static string GetString(string key)

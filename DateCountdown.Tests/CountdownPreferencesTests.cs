@@ -7,7 +7,7 @@ namespace DateCountdown.Tests;
 public sealed class CountdownPreferencesTests
 {
     [Fact]
-    public void Default_UsesNonIntrusiveSettings()
+    public void Default_UsesDaysOnlyCountdowns()
     {
         CountdownPreferences preferences = CountdownPreferences.Default;
 
@@ -17,10 +17,29 @@ public sealed class CountdownPreferencesTests
         Assert.False(preferences.OpenWindowAtStartup);
         Assert.False(preferences.ShowDesktopCountdown);
         Assert.False(preferences.ReduceMotion);
+        Assert.False(preferences.AutoDeleteExpiredCountdowns);
+        Assert.False(preferences.ExperimentalFeaturesEnabled);
+        Assert.False(preferences.ShowHoursWithinThreshold);
+        Assert.Equal(CountdownHourDisplayMode.DaysOnly, preferences.HourDisplayMode);
+        Assert.Equal(CountdownPreferences.DefaultHoursDisplayThresholdDays, preferences.HoursDisplayThresholdDays);
         Assert.Equal(CountdownPreferences.DefaultDesktopCountdownX, preferences.DesktopCountdownX);
         Assert.Equal(CountdownPreferences.DefaultDesktopCountdownY, preferences.DesktopCountdownY);
         Assert.Equal(CountdownPreferences.DefaultDesktopCountdownScale, preferences.DesktopCountdownScale);
         Assert.Equal(CountdownPreferences.DefaultDesktopCountdownCss, preferences.DesktopCountdownCss);
+        Assert.Equal(
+            [
+                CountdownToolbarAction.Add,
+                CountdownToolbarAction.Edit,
+                CountdownToolbarAction.Delete,
+                CountdownToolbarAction.StartupNotification
+            ],
+            preferences.ToolbarLayout.PrimaryActions);
+        Assert.Equal(
+            [
+                CountdownToolbarAction.GlanceSurface,
+                CountdownToolbarAction.DesktopOverlay
+            ],
+            preferences.ToolbarLayout.OverflowActions);
         Assert.Empty(preferences.DesktopOverlays);
     }
 
@@ -61,10 +80,17 @@ public sealed class CountdownPreferencesTests
             openWindowAtStartup: true,
             showDesktopCountdown: true,
             reduceMotion: true,
+            autoDeleteExpiredCountdowns: true,
+            experimentalFeaturesEnabled: true,
+            showHoursWithinThreshold: true,
+            hoursDisplayThresholdDays: 5,
             desktopCountdownX: 0.25,
             desktopCountdownY: 0.75,
             desktopCountdownScale: 1.5,
             desktopCountdownCss: ".countdown { text-align: left; }",
+            toolbarLayout: new CountdownToolbarLayout(
+                [CountdownToolbarAction.Add, CountdownToolbarAction.Delete],
+                primaryActionCount: 1),
             desktopOverlays: new[] { new DesktopOverlaySettings("second", isEnabled: true) });
 
         CountdownPreferences updated = preferences.With(daysTextSize: 60);
@@ -75,12 +101,84 @@ public sealed class CountdownPreferencesTests
         Assert.True(updated.OpenWindowAtStartup);
         Assert.True(updated.ShowDesktopCountdown);
         Assert.True(updated.ReduceMotion);
+        Assert.True(updated.AutoDeleteExpiredCountdowns);
+        Assert.True(updated.ExperimentalFeaturesEnabled);
+        Assert.True(updated.ShowHoursWithinThreshold);
+        Assert.Equal(CountdownHourDisplayMode.NearDeadline, updated.HourDisplayMode);
+        Assert.Equal(5, updated.HoursDisplayThresholdDays);
         Assert.Equal(0.25, updated.DesktopCountdownX);
         Assert.Equal(0.75, updated.DesktopCountdownY);
         Assert.Equal(1.5, updated.DesktopCountdownScale);
         Assert.Equal(".countdown { text-align: left; }", updated.DesktopCountdownCss);
+        Assert.Equal([CountdownToolbarAction.Add], updated.ToolbarLayout.PrimaryActions);
+        Assert.Contains(CountdownToolbarAction.Delete, updated.ToolbarLayout.OverflowActions);
         Assert.Single(updated.DesktopOverlays);
         Assert.Equal("second", updated.DesktopOverlays[0].CountdownId);
+    }
+
+    [Fact]
+    public void Constructor_NormalizesToolbarLayout()
+    {
+        CountdownToolbarLayout layout = new(
+            [
+                CountdownToolbarAction.Delete,
+                CountdownToolbarAction.Delete,
+                (CountdownToolbarAction)999,
+                CountdownToolbarAction.Edit
+            ],
+            primaryActionCount: 99);
+
+        Assert.Equal(
+            [
+                CountdownToolbarAction.Delete,
+                CountdownToolbarAction.Edit,
+                CountdownToolbarAction.Add,
+                CountdownToolbarAction.StartupNotification,
+                CountdownToolbarAction.GlanceSurface,
+                CountdownToolbarAction.DesktopOverlay
+            ],
+            layout.Actions);
+        Assert.Equal(layout.Actions.Count, layout.PrimaryActionCount);
+    }
+
+    [Fact]
+    public void ParseActions_WithUnknownValues_UsesKnownActionsAndFillsMissingDefaults()
+    {
+        IReadOnlyList<CountdownToolbarAction> actions =
+            CountdownToolbarLayout.ParseActions("Add,Unknown,StartupNotification,Add");
+
+        Assert.Equal(
+            [
+                CountdownToolbarAction.Add,
+                CountdownToolbarAction.StartupNotification,
+                CountdownToolbarAction.Edit,
+                CountdownToolbarAction.Delete,
+                CountdownToolbarAction.GlanceSurface,
+                CountdownToolbarAction.DesktopOverlay
+            ],
+            actions);
+    }
+
+    [Theory]
+    [InlineData(-1, CountdownPreferences.MinHoursDisplayThresholdDays)]
+    [InlineData(3, 3)]
+    [InlineData(999, CountdownPreferences.MaxHoursDisplayThresholdDays)]
+    public void Constructor_ConstrainsHoursDisplayThresholdDays(int thresholdDays, int expected)
+    {
+        CountdownPreferences preferences = new(hoursDisplayThresholdDays: thresholdDays);
+
+        Assert.Equal(expected, preferences.HoursDisplayThresholdDays);
+    }
+
+    [Fact]
+    public void With_CanSwitchToHoursOnlyMode()
+    {
+        CountdownPreferences preferences = new(showHoursWithinThreshold: true);
+
+        CountdownPreferences updated = preferences.With(hourDisplayMode: CountdownHourDisplayMode.HoursOnly);
+
+        Assert.Equal(CountdownHourDisplayMode.HoursOnly, updated.HourDisplayMode);
+        Assert.False(updated.ShowHoursWithinThreshold);
     }
 
     [Theory]
