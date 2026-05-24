@@ -153,6 +153,7 @@ public sealed partial class MainWindow : Window
     private string _editingCountdownId = string.Empty;
     private DateTimeOffset _lastCountdownSelectorDragAt = DateTimeOffset.MinValue;
     private Storyboard? _mainContentOffsetStoryboard;
+    private Storyboard? _countdownSurfaceStoryboard;
     private Storyboard? _countdownSelectorVisibilityStoryboard;
     private Storyboard? _toolbarPositionStoryboard;
     private Storyboard? _inlineEditorVisibilityStoryboard;
@@ -940,6 +941,8 @@ public sealed partial class MainWindow : Window
 
         _mainContentOffsetStoryboard?.Stop();
         _mainContentOffsetStoryboard = null;
+        _countdownSurfaceStoryboard?.Stop();
+        _countdownSurfaceStoryboard = null;
         _countdownSelectorVisibilityStoryboard?.Stop();
         _countdownSelectorVisibilityStoryboard = null;
         _toolbarPositionStoryboard?.Stop();
@@ -947,6 +950,10 @@ public sealed partial class MainWindow : Window
         CountdownSelectorFrame.Transitions = null;
         CountdownSelectorItems.ChildrenTransitions = null;
         ResetToolbarButtonTransforms();
+        if (!_isEditorVisible)
+        {
+            SetCountdownSurfaceVisible(_state.HasCountdowns);
+        }
     }
 
     private static string GetAppVersion()
@@ -1144,22 +1151,88 @@ public sealed partial class MainWindow : Window
         if (_state.SelectedCountdown is not CountdownItem selectedCountdown)
         {
             _previewTargetDate = CreateDefaultTargetDate();
-            CountdownDisplayPanel.Visibility = Visibility.Collapsed;
-            EmptyStatePanel.Visibility = Visibility.Visible;
-            TextBlockTitle.Text = string.Empty;
-            TextBlockDays.Text = string.Empty;
+            SetCountdownSurfaceVisible(showCountdown: false);
             UpdateSettingsPreview();
             UpdateDesktopCountdown();
             return;
         }
 
         _previewTargetDate = selectedCountdown.TargetDate;
-        CountdownDisplayPanel.Visibility = Visibility.Visible;
-        EmptyStatePanel.Visibility = Visibility.Collapsed;
         TextBlockTitle.Text = selectedCountdown.Title;
         TextBlockDays.Text = FormatCountdown(_previewTargetDate);
+        SetCountdownSurfaceVisible(showCountdown: true);
         UpdateSettingsPreview();
         UpdateDesktopCountdown();
+    }
+
+    private void SetCountdownSurfaceVisible(bool showCountdown)
+    {
+        FrameworkElement shownElement = showCountdown ? CountdownDisplayPanel : EmptyStatePanel;
+        FrameworkElement hiddenElement = showCountdown ? EmptyStatePanel : CountdownDisplayPanel;
+
+        _countdownSurfaceStoryboard?.Stop();
+        _countdownSurfaceStoryboard = null;
+
+        if (!_isMotionReady || !AnimationsEnabled || _isEditorVisible)
+        {
+            shownElement.Visibility = Visibility.Visible;
+            shownElement.Opacity = 1;
+            hiddenElement.Visibility = Visibility.Collapsed;
+            hiddenElement.Opacity = 0;
+            UpdateMainContentPanelPadding();
+            return;
+        }
+
+        if (shownElement.Visibility == Visibility.Visible &&
+            shownElement.Opacity >= 1 &&
+            hiddenElement.Visibility != Visibility.Visible)
+        {
+            UpdateMainContentPanelPadding();
+            return;
+        }
+
+        if (shownElement.Visibility != Visibility.Visible)
+        {
+            shownElement.Opacity = 0;
+            shownElement.Visibility = Visibility.Visible;
+        }
+
+        Storyboard storyboard = new();
+        storyboard.Children.Add(CreateOpacityAnimation(shownElement, 1));
+        if (hiddenElement.Visibility == Visibility.Visible && hiddenElement.Opacity > 0)
+        {
+            storyboard.Children.Add(CreateOpacityAnimation(hiddenElement, 0));
+        }
+        else
+        {
+            hiddenElement.Visibility = Visibility.Collapsed;
+            hiddenElement.Opacity = 0;
+        }
+
+        _countdownSurfaceStoryboard = storyboard;
+        storyboard.Completed += (_, _) =>
+        {
+            if (ReferenceEquals(_countdownSurfaceStoryboard, storyboard))
+            {
+                _countdownSurfaceStoryboard = null;
+                shownElement.Visibility = Visibility.Visible;
+                shownElement.Opacity = 1;
+                hiddenElement.Visibility = Visibility.Collapsed;
+                hiddenElement.Opacity = 0;
+                UpdateMainContentPanelPadding();
+            }
+        };
+        storyboard.Begin();
+    }
+
+    private void HideCountdownSurfaceImmediately()
+    {
+        _countdownSurfaceStoryboard?.Stop();
+        _countdownSurfaceStoryboard = null;
+        CountdownDisplayPanel.Visibility = Visibility.Collapsed;
+        CountdownDisplayPanel.Opacity = 0;
+        EmptyStatePanel.Visibility = Visibility.Collapsed;
+        EmptyStatePanel.Opacity = 0;
     }
 
     private void DateRefreshTimer_Tick(object? sender, object e)
@@ -1788,7 +1861,7 @@ public sealed partial class MainWindow : Window
         return newTransform;
     }
 
-    private static Storyboard CreateOpacityStoryboard(UIElement element, double to)
+    private static DoubleAnimation CreateOpacityAnimation(UIElement element, double to)
     {
         DoubleAnimation animation = new()
         {
@@ -1798,9 +1871,13 @@ public sealed partial class MainWindow : Window
         };
         Storyboard.SetTarget(animation, element);
         Storyboard.SetTargetProperty(animation, nameof(UIElement.Opacity));
+        return animation;
+    }
 
+    private static Storyboard CreateOpacityStoryboard(UIElement element, double to)
+    {
         Storyboard storyboard = new();
-        storyboard.Children.Add(animation);
+        storyboard.Children.Add(CreateOpacityAnimation(element, to));
         return storyboard;
     }
 
@@ -3125,8 +3202,7 @@ public sealed partial class MainWindow : Window
         DesktopCountdownContentScroller.Visibility = Visibility.Collapsed;
         ToolbarLayoutContentScroller.Visibility = Visibility.Collapsed;
         MainContentScroller.Visibility = Visibility.Visible;
-        CountdownDisplayPanel.Visibility = Visibility.Collapsed;
-        EmptyStatePanel.Visibility = Visibility.Collapsed;
+        HideCountdownSurfaceImmediately();
 
         _isUpdatingControls = true;
         try
