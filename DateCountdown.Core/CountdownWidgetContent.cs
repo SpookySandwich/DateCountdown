@@ -147,7 +147,14 @@ namespace DateCountdown.Core
             CountdownPreferences? preferences = null)
         {
             preferences ??= CountdownPreferences.Default;
-            CountdownItem selectedCountdown = state.SelectedCountdown;
+            if (state.SelectedCountdown is not CountdownItem selectedCountdown)
+            {
+                return "{" +
+                    "\"daysText\":\"\"," +
+                    "\"title\":\"" + JsonEscape(displayText.DefaultTitle) + "\"," +
+                    "\"targetDateText\":\"\"}";
+            }
+
             string displayTitle = displayText.FormatTitle(selectedCountdown.Title);
             string targetDateText = CountdownTimeZone.FormatTargetDateTime(
                 selectedCountdown.TargetDate,

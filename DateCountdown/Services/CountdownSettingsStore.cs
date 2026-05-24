@@ -36,6 +36,11 @@ internal sealed class CountdownSettingsStore
         }
 
         string title = _localSettings.Values[CountdownSettingsKeys.Title] as string ?? string.Empty;
+        if (!HasLegacyCountdown(title))
+        {
+            return CountdownState.CreateEmpty();
+        }
+
         string? targetTimeZoneId = _localSettings.Values[CountdownSettingsKeys.TargetTimeZoneId] as string;
         DateTimeOffset targetDate = CountdownLogic.ReadDateValue(_localSettings.Values[CountdownSettingsKeys.TargetDate], fallbackDate);
         if (string.IsNullOrWhiteSpace(targetTimeZoneId))
@@ -50,6 +55,16 @@ internal sealed class CountdownSettingsStore
     {
         _localSettings.Values[CountdownSettingsKeys.Countdowns] = CountdownStateJson.SerializeCountdowns(state.Countdowns);
         _localSettings.Values[CountdownSettingsKeys.SelectedCountdownId] = state.SelectedCountdownId;
+        if (!state.HasCountdowns)
+        {
+            _localSettings.Values[CountdownSettingsKeys.Title] = string.Empty;
+            _localSettings.Values.Remove(CountdownSettingsKeys.TargetDate);
+            _localSettings.Values[CountdownSettingsKeys.TargetTimeZoneId] = CountdownTimeZone.DefaultTimeZoneId;
+            _localSettings.Values[CountdownSettingsKeys.TileEnabled] = false;
+            _localSettings.Values[CountdownSettingsKeys.ToastEnabled] = false;
+            return;
+        }
+
         _localSettings.Values[CountdownSettingsKeys.Title] = state.Title;
         _localSettings.Values[CountdownSettingsKeys.TargetDate] = state.TargetDate;
         _localSettings.Values[CountdownSettingsKeys.TargetTimeZoneId] = state.TargetTimeZoneId;
@@ -108,6 +123,12 @@ internal sealed class CountdownSettingsStore
         _localSettings.Values[CountdownSettingsKeys.ToolbarPrimaryActionCount] = preferences.ToolbarLayout.PrimaryActionCount;
         _localSettings.Values[CountdownSettingsKeys.ToolbarLayoutVersion] = CurrentToolbarLayoutVersion;
         _localSettings.Values[CountdownSettingsKeys.DesktopOverlays] = DesktopOverlaySettingsJson.Serialize(preferences.DesktopOverlays);
+    }
+
+    private bool HasLegacyCountdown(string title)
+    {
+        return !string.IsNullOrWhiteSpace(title) ||
+            _localSettings.Values.ContainsKey(CountdownSettingsKeys.TargetDate);
     }
 
     private bool ReadBool(string key, bool fallback = false)

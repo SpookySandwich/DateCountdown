@@ -130,7 +130,7 @@ public sealed partial class MainWindow : Window
     private readonly DispatcherTimer _dateRefreshTimer = new();
     private readonly DesktopTrayService _desktopTrayService;
 
-    private CountdownState _state = CountdownState.CreateDefault(CountdownTimeZone.CreateDefaultTargetDate(DateTimeOffset.Now));
+    private CountdownState _state = CountdownState.CreateEmpty();
     private CountdownPreferences _preferences = CountdownPreferences.Default;
     private DateTimeOffset _previewTargetDate = DateTimeOffset.Now;
     private IReadOnlyList<CountdownTimeZoneOption> _timeZoneOptions = Array.Empty<CountdownTimeZoneOption>();
@@ -143,6 +143,7 @@ public sealed partial class MainWindow : Window
     private bool _isDesktopOverlayAvailable;
     private bool _isExiting;
     private bool _isMotionReady;
+    private bool _isCreatingCountdown;
     private bool _isDesktopCountdownPageVisible;
     private bool _isEditorVisible;
     private bool _isSettingsVisible;
@@ -306,6 +307,16 @@ public sealed partial class MainWindow : Window
             CultureInfo.CurrentCulture);
     }
 
+    private static DateTimeOffset CreateDefaultTargetDate()
+    {
+        return CountdownTimeZone.CreateDefaultTargetDate(DateTimeOffset.Now);
+    }
+
+    private DateTimeOffset GetSelectedOrDefaultTargetDate()
+    {
+        return _state.SelectedCountdown?.TargetDate ?? CreateDefaultTargetDate();
+    }
+
     private void LoadPreferences()
     {
         _preferences = _settingsStore.LoadPreferences();
@@ -327,7 +338,7 @@ public sealed partial class MainWindow : Window
 
     private void MigrateLegacyDesktopOverlayPreference()
     {
-        if (!_preferences.ShowDesktopCountdown || _preferences.DesktopOverlays.Count > 0)
+        if (!_state.HasCountdowns || !_preferences.ShowDesktopCountdown || _preferences.DesktopOverlays.Count > 0)
         {
             return;
         }
@@ -437,6 +448,8 @@ public sealed partial class MainWindow : Window
         AutomationProperties.SetHelpText(MoreButton, GetString("MoreButton/HelpText"));
         AutomationProperties.SetName(CountdownSelectorRail, GetString("CountdownSelector/Name"));
         AutomationProperties.SetName(InlineEditorPanel, GetString("Editor/Title/Edit"));
+        EmptyStateTitleText.Text = GetString("EmptyState/Title");
+        AutomationProperties.SetName(EmptyStatePanel, EmptyStateTitleText.Text);
         DateEditorHeaderText.Text = GetString("TargetDatePicker/Header");
         TimePickerTargetTime.Header = GetString("TargetTimePicker/Header");
         ComboBoxTargetTimeZone.Header = GetString("TargetTimeZoneComboBox/Header");
@@ -969,7 +982,9 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        double displayHeight = GetVisibleElementHeight(CountdownDisplayPanel, 140);
+        double displayHeight = _state.HasCountdowns
+            ? GetVisibleElementHeight(CountdownDisplayPanel, 140)
+            : GetVisibleElementHeight(EmptyStatePanel, 64);
         double editorHeight = _isEditorVisible
             ? GetVisibleElementHeight(InlineEditorPanel, 166) + MainContentPanel.Spacing
             : 0;
@@ -1001,7 +1016,14 @@ public sealed partial class MainWindow : Window
     {
         UpdateCountdownPreview();
         UpdateCountdownSelector();
-        UpdateEditorFromCountdown(_state.SelectedCountdown);
+        if (_state.SelectedCountdown is CountdownItem selectedCountdown)
+        {
+            UpdateEditorFromCountdown(selectedCountdown);
+        }
+        else
+        {
+            UpdateEditorForNewCountdown();
+        }
     }
 
     private void UpdateEditorFromCountdown(CountdownItem countdown)
@@ -1029,6 +1051,27 @@ public sealed partial class MainWindow : Window
             ComboBoxTargetTimeZone,
             showTimeZone,
             animate: false);
+        UpdateEditorCommandButtons();
+    }
+
+    private void UpdateEditorForNewCountdown()
+    {
+        DateTimeOffset defaultTargetDate = CreateDefaultTargetDate();
+        EditorTitleText.Text = GetString("Editor/Title/New");
+        AutomationProperties.SetName(InlineEditorPanel, EditorTitleText.Text);
+        TextBoxTitle.PlaceholderText = GetString("Title/PlaceholderText");
+        TextBoxTitle.MaxLength = CountdownItem.MaxTitleLength;
+        TextBoxTitle.Text = string.Empty;
+        SelectTargetTimeZone(CountdownTimeZone.DefaultTimeZoneId);
+        UpdateTargetDatePickerMinDate(CountdownTimeZone.DefaultTimeZoneId, defaultTargetDate);
+        DateTime targetDate = CountdownTimeZone.GetDateInTimeZone(defaultTargetDate, CountdownTimeZone.DefaultTimeZoneId);
+        DatePickerTargetDate.Date = new DateTimeOffset(targetDate, TimeSpan.Zero);
+        TimePickerTargetTime.Time = CountdownTimeZone.DefaultDeadlineTimeOfDay;
+        EditorTimeOptionsButton.IsChecked = false;
+        EditorTimeZoneOptionsButton.IsChecked = false;
+        UpdateEditorOptionToggleVisuals();
+        SetEditorOptionVisible(TimePickerTargetTime, isVisible: false, animate: false);
+        SetEditorOptionVisible(ComboBoxTargetTimeZone, isVisible: false, animate: false);
         UpdateEditorCommandButtons();
     }
 
@@ -1098,8 +1141,22 @@ public sealed partial class MainWindow : Window
 
     private void UpdateCountdownPreview()
     {
-        _previewTargetDate = _state.TargetDate;
-        TextBlockTitle.Text = _state.Title;
+        if (_state.SelectedCountdown is not CountdownItem selectedCountdown)
+        {
+            _previewTargetDate = CreateDefaultTargetDate();
+            CountdownDisplayPanel.Visibility = Visibility.Collapsed;
+            EmptyStatePanel.Visibility = Visibility.Visible;
+            TextBlockTitle.Text = string.Empty;
+            TextBlockDays.Text = string.Empty;
+            UpdateSettingsPreview();
+            UpdateDesktopCountdown();
+            return;
+        }
+
+        _previewTargetDate = selectedCountdown.TargetDate;
+        CountdownDisplayPanel.Visibility = Visibility.Visible;
+        EmptyStatePanel.Visibility = Visibility.Collapsed;
+        TextBlockTitle.Text = selectedCountdown.Title;
         TextBlockDays.Text = FormatCountdown(_previewTargetDate);
         UpdateSettingsPreview();
         UpdateDesktopCountdown();
@@ -1181,9 +1238,14 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        SettingsPreviewDaysText.Text = FormatCountdown(_previewTargetDate);
+        bool hasCountdown = _state.HasCountdowns;
+        SettingsPreviewDaysText.Text = hasCountdown
+            ? FormatCountdown(_previewTargetDate)
+            : GetString("EmptyState/Title");
         SettingsPreviewDaysText.FontSize = _preferences.DaysTextSize;
-        SettingsPreviewTitleText.Text = string.IsNullOrWhiteSpace(_state.Title)
+        SettingsPreviewTitleText.Text = !hasCountdown
+            ? string.Empty
+            : string.IsNullOrWhiteSpace(_state.Title)
             ? GetString("Title/PlaceholderText")
             : _state.Title;
         SettingsPreviewTitleText.FontSize = _preferences.TitleTextSize;
@@ -1231,10 +1293,11 @@ public sealed partial class MainWindow : Window
     private void ApplyEditorToolbarState()
     {
         bool canSaveDraft = CreateDraftFromControls().CanCommit(DateTimeOffset.Now);
+        bool canDelete = !_isCreatingCountdown && _state.CanRemoveCountdown;
         ApplyToolbarButtonStates([
             new ToolbarButtonState(NotifyButton, IsVisible: false, IsEnabled: false, IsActive: false),
             new ToolbarButtonState(TileButton, IsVisible: false, IsEnabled: false, IsActive: false),
-            new ToolbarButtonState(DeleteButton, IsVisible: _state.CanRemoveCountdown, IsEnabled: _state.CanRemoveCountdown, IsActive: false),
+            new ToolbarButtonState(DeleteButton, IsVisible: canDelete, IsEnabled: canDelete, IsActive: false),
             new ToolbarButtonState(CancelEditorButton, IsVisible: true, IsEnabled: true, IsActive: false),
             new ToolbarButtonState(SaveEditorButton, IsVisible: true, IsEnabled: canSaveDraft, IsActive: canSaveDraft),
             new ToolbarButtonState(EditButton, IsVisible: false, IsEnabled: false, IsActive: false),
@@ -1259,8 +1322,11 @@ public sealed partial class MainWindow : Window
     {
         return action switch
         {
+            CountdownToolbarAction.StartupNotification => _state.HasCountdowns,
+            CountdownToolbarAction.GlanceSurface => _state.HasCountdowns,
             CountdownToolbarAction.Delete => _state.CanRemoveCountdown,
-            CountdownToolbarAction.DesktopOverlay => _preferences.ExperimentalFeaturesEnabled && _isDesktopOverlayAvailable,
+            CountdownToolbarAction.Edit => _state.HasCountdowns,
+            CountdownToolbarAction.DesktopOverlay => _state.HasCountdowns && _preferences.ExperimentalFeaturesEnabled && _isDesktopOverlayAvailable,
             _ => true
         };
     }
@@ -1274,6 +1340,7 @@ public sealed partial class MainWindow : Window
     private bool ShouldPromoteDesktopOverlayAction()
     {
         return _preferences.ExperimentalFeaturesEnabled &&
+            _state.HasCountdowns &&
             _isDesktopOverlayAvailable &&
             GetSelectedDesktopOverlay().IsEnabled;
     }
@@ -1283,11 +1350,11 @@ public sealed partial class MainWindow : Window
         return action switch
         {
             CountdownToolbarAction.StartupNotification => _state.ToastEnabled || canCommitDraft,
-            CountdownToolbarAction.GlanceSurface => _isWindows11OrGreater || _state.TileEnabled || canCommitDraft,
+            CountdownToolbarAction.GlanceSurface => _state.HasCountdowns && (_isWindows11OrGreater || _state.TileEnabled || canCommitDraft),
             CountdownToolbarAction.Delete => _state.CanRemoveCountdown,
-            CountdownToolbarAction.Edit => true,
+            CountdownToolbarAction.Edit => _state.HasCountdowns,
             CountdownToolbarAction.Add => true,
-            CountdownToolbarAction.DesktopOverlay => _preferences.ExperimentalFeaturesEnabled && _isDesktopOverlayAvailable,
+            CountdownToolbarAction.DesktopOverlay => _state.HasCountdowns && _preferences.ExperimentalFeaturesEnabled && _isDesktopOverlayAvailable,
             _ => false
         };
     }
@@ -1930,6 +1997,11 @@ public sealed partial class MainWindow : Window
 
     private void BringSelectedCountdownIntoView()
     {
+        if (!_state.HasCountdowns)
+        {
+            return;
+        }
+
         string countdownId = _state.SelectedCountdownId;
         _ = BringCountdownSelectorItemIntoViewAsync(countdownId);
     }
@@ -2129,14 +2201,30 @@ public sealed partial class MainWindow : Window
     private async Task<bool> ApplyEditorControlsToStateAsync(bool reconcileStartupTask)
     {
         CountdownDraft draft = CreateDraftFromControls();
-        if (!draft.CanCommit(DateTimeOffset.Now))
+        DateTimeOffset now = DateTimeOffset.Now;
+        if (!draft.CanCommit(now))
         {
             UpdateEditorCommandButtons();
             return false;
         }
 
+        if (_isCreatingCountdown || !_state.HasCountdowns)
+        {
+            CountdownItem newCountdown = new(
+                Guid.NewGuid().ToString("N"),
+                draft.Title,
+                draft.TargetDate!.Value,
+                draft.ToastEnabled,
+                draft.TargetTimeZoneId);
+            CountdownState createdState = _state
+                .AddCountdown(newCountdown, selectCountdown: true)
+                .With(tileEnabled: draft.TileEnabled);
+            await ApplyCommittedStateAsync(createdState, reconcileStartupTask);
+            return true;
+        }
+
         CountdownState stateToEdit = _state.SelectCountdown(_editingCountdownId);
-        if (!draft.TryApplyTo(stateToEdit, DateTimeOffset.Now, out CountdownState? nextState) || nextState is null)
+        if (!draft.TryApplyTo(stateToEdit, now, out CountdownState? nextState) || nextState is null)
         {
             UpdateEditorCommandButtons();
             return false;
@@ -2212,7 +2300,7 @@ public sealed partial class MainWindow : Window
             TextBoxTitle.Text ?? string.Empty,
             targetDate,
             _isWindows11OrGreater ? false : _state.TileEnabled,
-            _state.ToastEnabled,
+            _isCreatingCountdown ? false : _state.ToastEnabled,
             targetTimeZoneId);
     }
 
@@ -2225,12 +2313,17 @@ public sealed partial class MainWindow : Window
 
     private CountdownDraft CreateDraftFromState(bool? tileEnabled = null, bool? toastEnabled = null)
     {
+        if (_state.SelectedCountdown is not CountdownItem selectedCountdown)
+        {
+            return new CountdownDraft(string.Empty, null, tileEnabled: false, toastEnabled: false);
+        }
+
         return new CountdownDraft(
-            _state.Title,
-            _state.TargetDate,
+            selectedCountdown.Title,
+            selectedCountdown.TargetDate,
             _isWindows11OrGreater ? false : tileEnabled ?? _state.TileEnabled,
-            toastEnabled ?? _state.ToastEnabled,
-            _state.TargetTimeZoneId);
+            toastEnabled ?? selectedCountdown.ToastEnabled,
+            selectedCountdown.TargetTimeZoneId);
     }
 
     private void UpdateEditorCommandButtons()
@@ -2252,7 +2345,7 @@ public sealed partial class MainWindow : Window
     {
         return ComboBoxTargetTimeZone.SelectedItem is CountdownTimeZoneOption option
             ? option.Id
-            : _state.TargetTimeZoneId;
+            : _state.SelectedCountdown?.TargetTimeZoneId ?? CountdownTimeZone.DefaultTimeZoneId;
     }
 
     private async Task ReconcileStartupTaskAsync()
@@ -2262,20 +2355,19 @@ public sealed partial class MainWindow : Window
 
     private async Task UpdateLiveTileFromStateAsync()
     {
+        if (!_state.HasCountdowns || !_state.TileEnabled)
+        {
+            _startMenuService.ClearLiveTile();
+            return;
+        }
+
         CountdownDisplayText displayText = CreateDisplayText();
         string daysLeft = displayText.FormatCountdown(
             _state.TargetDate,
             DateTimeOffset.Now,
             _preferences,
             CultureInfo.CurrentCulture);
-        if (_state.TileEnabled)
-        {
-            await _startMenuService.UpdateLiveTileAsync(daysLeft, displayText.FormatTitle(_state.Title));
-        }
-        else
-        {
-            _startMenuService.ClearLiveTile();
-        }
+        await _startMenuService.UpdateLiveTileAsync(daysLeft, displayText.FormatTitle(_state.Title));
     }
 
     private void SyncWidgets()
@@ -2358,6 +2450,11 @@ public sealed partial class MainWindow : Window
 
     private DesktopOverlaySettings GetSelectedDesktopOverlay()
     {
+        if (!_state.HasCountdowns)
+        {
+            return new DesktopOverlaySettings(CountdownItem.DefaultId);
+        }
+
         return _preferences.DesktopOverlays.FirstOrDefault(overlay => string.Equals(overlay.CountdownId, _state.SelectedCountdownId, StringComparison.Ordinal)) ??
             new DesktopOverlaySettings(_state.SelectedCountdownId);
     }
@@ -2389,6 +2486,11 @@ public sealed partial class MainWindow : Window
 
     private void ShowStartupNotificationSavedToast(bool toastEnabled)
     {
+        if (!_state.HasCountdowns)
+        {
+            return;
+        }
+
         CountdownDisplayText displayText = CreateDisplayText();
         string countdownTitle = displayText.FormatTitle(_state.Title);
         string contentFormat = GetString(toastEnabled
@@ -2576,7 +2678,7 @@ public sealed partial class MainWindow : Window
     {
         if (!_isUpdatingControls)
         {
-            UpdateTargetDatePickerMinDate(GetDraftTargetTimeZoneId(), CreateDraftFromControls().TargetDate ?? _state.TargetDate);
+            UpdateTargetDatePickerMinDate(GetDraftTargetTimeZoneId(), CreateDraftFromControls().TargetDate ?? GetSelectedOrDefaultTargetDate());
             UpdateEditorCommandButtons();
         }
     }
@@ -2594,7 +2696,7 @@ public sealed partial class MainWindow : Window
         if (!_isUpdatingControls)
         {
             CountdownDraft draft = CreateDraftFromControls();
-            UpdateTargetDatePickerMinDate(draft.TargetTimeZoneId, draft.TargetDate ?? _state.TargetDate);
+            UpdateTargetDatePickerMinDate(draft.TargetTimeZoneId, draft.TargetDate ?? GetSelectedOrDefaultTargetDate());
             UpdateEditorCommandButtons();
         }
     }
@@ -2619,7 +2721,7 @@ public sealed partial class MainWindow : Window
         }
 
         SetEditorOptionVisible(ComboBoxTargetTimeZone, EditorTimeZoneOptionsButton.IsChecked == true);
-        UpdateTargetDatePickerMinDate(GetDraftTargetTimeZoneId(), CreateDraftFromControls().TargetDate ?? _state.TargetDate);
+        UpdateTargetDatePickerMinDate(GetDraftTargetTimeZoneId(), CreateDraftFromControls().TargetDate ?? GetSelectedOrDefaultTargetDate());
         UpdateEditorOptionToggleVisuals();
         UpdateEditorCommandButtons();
     }
@@ -2631,6 +2733,12 @@ public sealed partial class MainWindow : Window
 
     private async Task ToggleGlanceSurfaceAsync(FrameworkElement placementTarget)
     {
+        if (!_state.HasCountdowns)
+        {
+            UpdateButtonStatus();
+            return;
+        }
+
         if (_isWindows11OrGreater)
         {
             ShowWidgetHelpFlyout(placementTarget);
@@ -2753,6 +2861,12 @@ public sealed partial class MainWindow : Window
 
     private async Task ToggleStartupNotificationAsync()
     {
+        if (!_state.HasCountdowns)
+        {
+            UpdateButtonStatus();
+            return;
+        }
+
         bool toastEnabled = !_state.ToastEnabled;
         if (!toastEnabled)
         {
@@ -2779,22 +2893,15 @@ public sealed partial class MainWindow : Window
         await AddCountdownAsync();
     }
 
-    private async Task AddCountdownAsync()
+    private Task AddCountdownAsync()
     {
         if (_isEditorVisible)
         {
-            return;
+            return Task.CompletedTask;
         }
 
-        CountdownItem newCountdown = new CountdownItem(
-            Guid.NewGuid().ToString("N"),
-            FormatNewCountdownTitle(_state.Countdowns.Count + 1),
-            CountdownTimeZone.CreateDefaultTargetDate(DateTimeOffset.Now),
-            targetTimeZoneId: CountdownTimeZone.DefaultTimeZoneId);
-
-        await ApplyCommittedStateAsync(
-            _state.AddCountdown(newCountdown, selectCountdown: true),
-            reconcileStartupTask: true);
+        ShowNewCountdownEditor();
+        return Task.CompletedTask;
     }
 
     private void EditButton_Click(object sender, RoutedEventArgs e)
@@ -2804,12 +2911,12 @@ public sealed partial class MainWindow : Window
 
     private void StartEditingSelectedCountdown()
     {
-        if (_isEditorVisible)
+        if (_isEditorVisible || _state.SelectedCountdown is not CountdownItem selectedCountdown)
         {
             return;
         }
 
-        ShowInlineEditor(_state.SelectedCountdown);
+        ShowInlineEditor(selectedCountdown);
     }
 
     private void CancelEditorButton_Click(object sender, RoutedEventArgs e)
@@ -2900,7 +3007,7 @@ public sealed partial class MainWindow : Window
 
     private void OpenDesktopCountdownPage()
     {
-        if (!_preferences.ExperimentalFeaturesEnabled)
+        if (!_state.HasCountdowns || !_preferences.ExperimentalFeaturesEnabled)
         {
             UpdateButtonStatus();
             return;
@@ -2973,6 +3080,12 @@ public sealed partial class MainWindow : Window
 
     private void ShowDesktopCountdownPage()
     {
+        if (!_state.HasCountdowns)
+        {
+            ShowCountdownPage();
+            return;
+        }
+
         if (!_preferences.ExperimentalFeaturesEnabled)
         {
             ShowSettingsPage();
@@ -2998,6 +3111,40 @@ public sealed partial class MainWindow : Window
         UpdateSettingsControls();
     }
 
+    private void ShowNewCountdownEditor()
+    {
+        _widgetHelpFlyout?.Hide();
+        StopDesktopCountdownAdjustment();
+        _isSettingsVisible = false;
+        _isDesktopCountdownPageVisible = false;
+        _isToolbarLayoutPageVisible = false;
+        _isEditorVisible = true;
+        _isCreatingCountdown = true;
+        _editingCountdownId = string.Empty;
+        SettingsContentScroller.Visibility = Visibility.Collapsed;
+        DesktopCountdownContentScroller.Visibility = Visibility.Collapsed;
+        ToolbarLayoutContentScroller.Visibility = Visibility.Collapsed;
+        MainContentScroller.Visibility = Visibility.Visible;
+        CountdownDisplayPanel.Visibility = Visibility.Collapsed;
+        EmptyStatePanel.Visibility = Visibility.Collapsed;
+
+        _isUpdatingControls = true;
+        try
+        {
+            UpdateEditorForNewCountdown();
+        }
+        finally
+        {
+            _isUpdatingControls = false;
+        }
+
+        SetInlineEditorVisible(true);
+        UpdateEditorCommandButtons();
+        UpdateCountdownSelector();
+        UpdateButtonStatus();
+        TextBoxTitle.Focus(FocusState.Programmatic);
+    }
+
     private void ShowInlineEditor(CountdownItem countdown)
     {
         _widgetHelpFlyout?.Hide();
@@ -3006,6 +3153,7 @@ public sealed partial class MainWindow : Window
         _isDesktopCountdownPageVisible = false;
         _isToolbarLayoutPageVisible = false;
         _isEditorVisible = true;
+        _isCreatingCountdown = false;
         _editingCountdownId = countdown.Id;
         SettingsContentScroller.Visibility = Visibility.Collapsed;
         DesktopCountdownContentScroller.Visibility = Visibility.Collapsed;
@@ -3034,6 +3182,7 @@ public sealed partial class MainWindow : Window
     {
         bool wasEditorVisible = _isEditorVisible;
         _isEditorVisible = false;
+        _isCreatingCountdown = false;
         _editingCountdownId = string.Empty;
         SetInlineEditorVisible(false);
 
@@ -3390,7 +3539,7 @@ public sealed partial class MainWindow : Window
 
     private void DesktopCountdownToggle_Toggled(object sender, RoutedEventArgs e)
     {
-        if (_isUpdatingSettingsControls || !_preferences.ExperimentalFeaturesEnabled)
+        if (_isUpdatingSettingsControls || !_state.HasCountdowns || !_preferences.ExperimentalFeaturesEnabled)
         {
             return;
         }
@@ -3419,6 +3568,12 @@ public sealed partial class MainWindow : Window
 
     private void AdjustDesktopCountdownButton_Click(object sender, RoutedEventArgs e)
     {
+        if (!_state.HasCountdowns)
+        {
+            UpdateSettingsControls();
+            return;
+        }
+
         DesktopOverlaySettings selectedOverlay = GetSelectedDesktopOverlay();
         if (!selectedOverlay.IsEnabled)
         {

@@ -174,6 +174,9 @@
   <data name="NewCountdownTitleFormat" xml:space="preserve">
     <value>倒计时 {0}</value>
   </data>
+  <data name="EmptyState.Title" xml:space="preserve">
+    <value>暂无倒计时</value>
+  </data>
   <data name="CreateStartupTaskFailedNotification.Content" xml:space="preserve">
     <value>请在启动应用中启用日期倒计时，然后重试。</value>
   </data>

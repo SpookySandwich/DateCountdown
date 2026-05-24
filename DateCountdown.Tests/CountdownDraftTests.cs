@@ -118,6 +118,24 @@ public sealed class CountdownDraftTests
     }
 
     [Fact]
+    public void TryApplyTo_WithEmptyStateCreatesFirstCountdown()
+    {
+        DateTimeOffset targetDate = Now.AddDays(3);
+        CountdownDraft draft = new("Launch", targetDate, tileEnabled: true, toastEnabled: true);
+
+        bool committed = draft.TryApplyTo(CountdownState.CreateEmpty(), Now, out CountdownState? state);
+
+        Assert.True(committed);
+        Assert.NotNull(state);
+        Assert.Single(state.Countdowns);
+        Assert.True(state.HasCountdowns);
+        Assert.Equal("Launch", state.Title);
+        Assert.Equal(targetDate, state.TargetDate);
+        Assert.True(state.TileEnabled);
+        Assert.True(state.ToastEnabled);
+    }
+
+    [Fact]
     public void TryApplyTo_CommitsNormalizedTitle()
     {
         CountdownState state = new("Original", Now.AddDays(1), tileEnabled: false, toastEnabled: false);

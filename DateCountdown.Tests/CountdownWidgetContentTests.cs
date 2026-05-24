@@ -183,6 +183,22 @@ public sealed class CountdownWidgetContentTests
     }
 
     [Fact]
+    public void BuildDataJson_WithEmptyStateReturnsNoCountdownData()
+    {
+        CountdownDisplayText displayText = new("Date Countdown", "{0} day", "{0} days");
+        DateTimeOffset now = new(2026, 4, 25, 0, 0, 0, TimeSpan.Zero);
+
+        using JsonDocument document = JsonDocument.Parse(
+            CountdownWidgetContent.BuildDataJson(CountdownState.CreateEmpty(), now, displayText));
+
+        JsonElement root = document.RootElement;
+        Assert.Equal(string.Empty, root.GetProperty("daysText").GetString());
+        Assert.Equal("Date Countdown", root.GetProperty("title").GetString());
+        Assert.Equal(string.Empty, root.GetProperty("targetDateText").GetString());
+        Assert.False(root.TryGetProperty("item0Title", out _));
+    }
+
+    [Fact]
     public void BuildDataJson_UsesHoursWhenPreferenceIsEnabled()
     {
         CountdownDisplayText displayText = new("Countdown", "{0} day", "{0} days");

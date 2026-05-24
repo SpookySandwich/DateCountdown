@@ -47,7 +47,7 @@ internal sealed class StartupTaskRunner
             }
         }
 
-        if (!_isWindows11OrGreater && state.TileEnabled)
+        if (!_isWindows11OrGreater && state.HasCountdowns && state.TileEnabled)
         {
             string daysLeft = displayText.FormatCountdown(
                 state.TargetDate,

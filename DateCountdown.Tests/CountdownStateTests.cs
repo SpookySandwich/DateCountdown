@@ -16,17 +16,29 @@ public sealed class CountdownStateTests
     }
 
     [Fact]
-    public void CreateDefault_UsesProvidedTargetDateAndDisabledOptions()
+    public void CreateEmpty_ReturnsStateWithoutCountdowns()
     {
-        DateTimeOffset targetDate = new(2026, 5, 8, 0, 0, 0, TimeSpan.Zero);
+        CountdownState state = CountdownState.CreateEmpty();
 
-        CountdownState state = CountdownState.CreateDefault(targetDate);
-
+        Assert.Empty(state.Countdowns);
+        Assert.False(state.HasCountdowns);
+        Assert.Equal(string.Empty, state.SelectedCountdownId);
+        Assert.Null(state.SelectedCountdown);
         Assert.Equal(string.Empty, state.Title);
-        Assert.Equal(targetDate, state.TargetDate);
+        Assert.Equal(default, state.TargetDate);
+        Assert.Equal(CountdownTimeZone.DefaultTimeZoneId, state.TargetTimeZoneId);
         Assert.False(state.TileEnabled);
         Assert.False(state.ToastEnabled);
         Assert.False(state.AnyToastEnabled);
+    }
+
+    [Fact]
+    public void CreateDefault_ReturnsEmptyState()
+    {
+        CountdownState state = CountdownState.CreateDefault(new DateTimeOffset(2026, 5, 8, 0, 0, 0, TimeSpan.Zero));
+
+        Assert.Empty(state.Countdowns);
+        Assert.False(state.HasCountdowns);
     }
 
     [Fact]
@@ -169,6 +181,20 @@ public sealed class CountdownStateTests
     }
 
     [Fact]
+    public void AddCountdown_OnEmptyStateAppendsAndSelectsNewCountdown()
+    {
+        CountdownState state = CountdownState.CreateEmpty();
+        CountdownItem countdown = new("first", "First", DateTimeOffset.UnixEpoch);
+
+        CountdownState updated = state.AddCountdown(countdown, selectCountdown: false);
+
+        Assert.Single(updated.Countdowns);
+        Assert.True(updated.HasCountdowns);
+        Assert.Equal("first", updated.SelectedCountdownId);
+        Assert.Equal("First", updated.Title);
+    }
+
+    [Fact]
     public void WithDefaultTitles_NamesOnlyBlankCountdowns()
     {
         CountdownState state = new CountdownState(
@@ -220,6 +246,19 @@ public sealed class CountdownStateTests
     }
 
     [Fact]
+    public void MultiItemConstructor_AllowsEmptyCountdowns()
+    {
+        CountdownState state = new CountdownState(null, selectedCountdownId: "missing", tileEnabled: true, toastEnabled: true);
+
+        Assert.Empty(state.Countdowns);
+        Assert.False(state.HasCountdowns);
+        Assert.Equal(string.Empty, state.SelectedCountdownId);
+        Assert.False(state.TileEnabled);
+        Assert.False(state.ToastEnabled);
+        Assert.False(state.AnyToastEnabled);
+    }
+
+    [Fact]
     public void SelectCountdown_ChangesSelectedCountdownWhenIdExists()
     {
         CountdownState state = new CountdownState(
@@ -252,11 +291,19 @@ public sealed class CountdownStateTests
     }
 
     [Fact]
-    public void CanRemoveCountdown_IsFalseForSingleCountdown()
+    public void CanRemoveCountdown_IsFalseForEmptyState()
+    {
+        CountdownState state = CountdownState.CreateEmpty();
+
+        Assert.False(state.CanRemoveCountdown);
+    }
+
+    [Fact]
+    public void CanRemoveCountdown_IsTrueForSingleCountdown()
     {
         CountdownState state = new("First", DateTimeOffset.UnixEpoch, tileEnabled: false, toastEnabled: false);
 
-        Assert.False(state.CanRemoveCountdown);
+        Assert.True(state.CanRemoveCountdown);
     }
 
     [Fact]
@@ -276,13 +323,17 @@ public sealed class CountdownStateTests
     }
 
     [Fact]
-    public void RemoveCountdown_IgnoresSingleCountdownState()
+    public void RemoveCountdown_RemovesSingleCountdown()
     {
         CountdownState state = new("First", DateTimeOffset.UnixEpoch, tileEnabled: false, toastEnabled: false);
 
         CountdownState updated = state.RemoveCountdown(CountdownItem.DefaultId);
 
-        Assert.Same(state, updated);
+        Assert.Empty(updated.Countdowns);
+        Assert.False(updated.HasCountdowns);
+        Assert.Equal(string.Empty, updated.SelectedCountdownId);
+        Assert.False(updated.TileEnabled);
+        Assert.False(updated.AnyToastEnabled);
     }
 
     [Fact]
@@ -365,7 +416,7 @@ public sealed class CountdownStateTests
         Assert.Single(updated.Countdowns);
         Assert.Equal("first", updated.SelectedCountdownId);
         Assert.Equal("First", updated.Title);
-        Assert.False(updated.CanRemoveCountdown);
+        Assert.True(updated.CanRemoveCountdown);
     }
 
     [Fact]
@@ -393,7 +444,7 @@ public sealed class CountdownStateTests
     }
 
     [Fact]
-    public void RemoveExpiredCountdowns_CreatesFreshDefaultWhenAllCountdownsExpired()
+    public void RemoveExpiredCountdowns_ReturnsEmptyStateWhenAllCountdownsExpired()
     {
         DateTimeOffset now = new(2026, 4, 25, 12, 0, 0, TimeSpan.FromHours(8));
         CountdownState state = new CountdownState(
@@ -404,9 +455,11 @@ public sealed class CountdownStateTests
 
         CountdownState updated = state.RemoveExpiredCountdowns(now);
 
-        Assert.Single(updated.Countdowns);
+        Assert.Empty(updated.Countdowns);
+        Assert.False(updated.HasCountdowns);
+        Assert.Equal(string.Empty, updated.SelectedCountdownId);
         Assert.Equal(string.Empty, updated.Title);
-        Assert.Equal(CountdownTimeZone.CreateDefaultTargetDate(now), updated.TargetDate);
+        Assert.Equal(default, updated.TargetDate);
         Assert.False(updated.TileEnabled);
         Assert.False(updated.AnyToastEnabled);
     }

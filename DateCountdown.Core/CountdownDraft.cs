@@ -55,6 +55,11 @@ namespace DateCountdown.Core
                 return false;
             }
 
+            if (!currentState.HasCountdowns)
+            {
+                return TryCommit(now, out state);
+            }
+
             state = currentState.With(
                 title: Title,
                 targetDate: TargetDate!.Value,

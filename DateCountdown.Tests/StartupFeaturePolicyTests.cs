@@ -52,6 +52,14 @@ public sealed class StartupFeaturePolicyTests
     }
 
     [Fact]
+    public void RequiresStartupTask_WithEmptyStateIgnoresCountdownBackedFeatures()
+    {
+        StartupFeaturePolicy policy = new(supportsStartTile: true);
+
+        Assert.False(policy.RequiresStartupTask(CountdownState.CreateEmpty(), CountdownPreferences.Default));
+    }
+
+    [Fact]
     public void NormalizeState_OnWin10_PreservesTileSetting()
     {
         StartupFeaturePolicy policy = new(supportsStartTile: true);

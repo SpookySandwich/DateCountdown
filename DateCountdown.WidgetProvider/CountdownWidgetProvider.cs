@@ -123,6 +123,11 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
         }
 
         string title = localSettings.Values[CountdownSettingsKeys.Title] as string ?? string.Empty;
+        if (!HasLegacyCountdown(localSettings, title))
+        {
+            return CountdownState.CreateEmpty();
+        }
+
         string? targetTimeZoneId = localSettings.Values[CountdownSettingsKeys.TargetTimeZoneId] as string;
         DateTimeOffset targetDate = CountdownLogic.ReadDateValue(
             localSettings.Values[CountdownSettingsKeys.TargetDate],
@@ -133,6 +138,12 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
         }
 
         return new CountdownState(title, targetDate, tileEnabled: false, toastEnabled: false, targetTimeZoneId);
+    }
+
+    private static bool HasLegacyCountdown(ApplicationDataContainer localSettings, string title)
+    {
+        return !string.IsNullOrWhiteSpace(title) ||
+            localSettings.Values.ContainsKey(CountdownSettingsKeys.TargetDate);
     }
 
     private static CountdownPreferences ReadPreferences()

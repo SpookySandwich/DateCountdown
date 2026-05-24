@@ -117,6 +117,23 @@
                 </StackPanel>
 
                 <StackPanel
+                    x:Name="EmptyStatePanel"
+                    MaxWidth="360"
+                    HorizontalAlignment="Center"
+                    Visibility="Collapsed"
+                    AutomationProperties.AutomationId="EmptyCountdownState">
+                    <TextBlock
+                        x:Name="EmptyStateTitleText"
+                        FontFamily="Segoe UI Variable Display, Segoe UI"
+                        FontSize="32"
+                        FontWeight="Light"
+                        HorizontalAlignment="Center"
+                        Opacity="0.72"
+                        TextAlignment="Center"
+                        TextWrapping="WrapWholeWords" />
+                </StackPanel>
+
+                <StackPanel
                     x:Name="InlineEditorPanel"
                     HorizontalAlignment="Stretch"
                     MaxWidth="360"
