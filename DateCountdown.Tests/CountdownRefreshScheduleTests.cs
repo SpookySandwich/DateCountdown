@@ -76,6 +76,20 @@ public sealed class CountdownRefreshScheduleTests
     }
 
     [Fact]
+    public void GetDelayUntilNextCountdownRefresh_UsesTargetRelativeHourBoundaryForDaysAndHoursMode()
+    {
+        DateTimeOffset now = new(2026, 5, 1, 12, 10, 0, TimeSpan.Zero);
+        CountdownItem countdown = new("target", "Target", new DateTimeOffset(2026, 5, 2, 15, 30, 0, TimeSpan.Zero));
+
+        TimeSpan delay = CountdownRefreshSchedule.GetDelayUntilNextCountdownRefresh(
+            now,
+            new CountdownPreferences(hourDisplayMode: CountdownHourDisplayMode.DaysAndHours),
+            new[] { countdown });
+
+        Assert.Equal(TimeSpan.FromMinutes(20) + TimeSpan.FromSeconds(1), delay);
+    }
+
+    [Fact]
     public void GetDelayUntilNextCountdownRefresh_UsesNearDeadlineTransitionBoundary()
     {
         DateTimeOffset now = new(2026, 5, 1, 12, 10, 0, TimeSpan.Zero);

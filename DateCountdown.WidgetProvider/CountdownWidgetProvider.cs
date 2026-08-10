@@ -115,35 +115,9 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
     private static CountdownState ReadState()
     {
         ApplicationDataContainer localSettings = ApplicationData.Current.LocalSettings;
-        IReadOnlyList<CountdownItem> countdowns = CountdownStateJson.DeserializeCountdowns(localSettings.Values[CountdownSettingsKeys.Countdowns] as string);
-        string selectedCountdownId = localSettings.Values[CountdownSettingsKeys.SelectedCountdownId] as string ?? string.Empty;
-        if (countdowns.Count > 0)
-        {
-            return new CountdownState(countdowns, selectedCountdownId, tileEnabled: false, toastEnabled: false);
-        }
-
-        string title = localSettings.Values[CountdownSettingsKeys.Title] as string ?? string.Empty;
-        if (!HasLegacyCountdown(localSettings, title))
-        {
-            return CountdownState.CreateEmpty();
-        }
-
-        string? targetTimeZoneId = localSettings.Values[CountdownSettingsKeys.TargetTimeZoneId] as string;
-        DateTimeOffset targetDate = CountdownLogic.ReadDateValue(
-            localSettings.Values[CountdownSettingsKeys.TargetDate],
+        return CountdownStateSettings.Load(
+            localSettings.Values,
             CountdownTimeZone.CreateDefaultTargetDate(DateTimeOffset.Now));
-        if (string.IsNullOrWhiteSpace(targetTimeZoneId))
-        {
-            targetDate = CountdownTimeZone.MigrateLegacyDateOnlyTarget(targetDate, targetTimeZoneId);
-        }
-
-        return new CountdownState(title, targetDate, tileEnabled: false, toastEnabled: false, targetTimeZoneId);
-    }
-
-    private static bool HasLegacyCountdown(ApplicationDataContainer localSettings, string title)
-    {
-        return !string.IsNullOrWhiteSpace(title) ||
-            localSettings.Values.ContainsKey(CountdownSettingsKeys.TargetDate);
     }
 
     private static CountdownPreferences ReadPreferences()
@@ -171,19 +145,7 @@ internal sealed class CountdownWidgetProvider : IWidgetProvider, IDisposable
 
     private static CountdownDisplayText CreateDisplayText()
     {
-        return new CountdownDisplayText(
-            GetString("AppName"),
-            GetString("DaysLeftOneText"),
-            GetString("DaysLeftManyText"),
-            GetString("DueTodayText"),
-            GetString("HoursLeftOneText"),
-            GetString("HoursLeftManyText"),
-            GetString("DaysOverdueOneText"),
-            GetString("DaysOverdueManyText"),
-            GetString("DaysHoursLeftOneDayOneHourText"),
-            GetString("DaysHoursLeftOneDayManyHoursText"),
-            GetString("DaysHoursLeftManyDaysOneHourText"),
-            GetString("DaysHoursLeftManyDaysManyHoursText"));
+        return CountdownDisplayText.FromResources(GetString);
     }
 
     private static bool ReadBool(ApplicationDataContainer localSettings, string key, bool fallback = false)

@@ -4,6 +4,7 @@ namespace DateCountdown.Core
     {
         DaysOnly = 0,
         NearDeadline = 1,
-        HoursOnly = 2
+        HoursOnly = 2,
+        DaysAndHours = 3
     }
 }

@@ -17,33 +17,52 @@ namespace DateCountdown.Core
         private const string FallbackOneDayManyHoursLeftFormat = "{0} day {1} hours left";
         private const string FallbackManyDaysOneHourLeftFormat = "{0} days {1} hour left";
         private const string FallbackManyDaysManyHoursLeftFormat = "{0} days {1} hours left";
+        private const string FallbackOneDayDurationFormat = "{0} day";
+        private const string FallbackManyDaysDurationFormat = "{0} days";
+        private const string FallbackOneHourDurationFormat = "{0} hour";
+        private const string FallbackManyHoursDurationFormat = "{0} hours";
 
-        public CountdownDisplayText(
-            string? defaultTitle,
-            string? oneDayLeftFormat,
-            string? manyDaysLeftFormat,
-            string? dueTodayText = null,
-            string? oneHourLeftFormat = null,
-            string? manyHoursLeftFormat = null,
-            string? oneDayOverdueFormat = null,
-            string? manyDaysOverdueFormat = null,
-            string? oneDayOneHourLeftFormat = null,
-            string? oneDayManyHoursLeftFormat = null,
-            string? manyDaysOneHourLeftFormat = null,
-            string? manyDaysManyHoursLeftFormat = null)
+        public CountdownDisplayText(CountdownDisplayTextResources resources)
         {
-            DefaultTitle = UseFallback(defaultTitle, FallbackDefaultTitle);
-            OneDayLeftFormat = UseFallback(oneDayLeftFormat, FallbackOneDayLeftFormat);
-            ManyDaysLeftFormat = UseFallback(manyDaysLeftFormat, FallbackManyDaysLeftFormat);
-            DueTodayText = UseFallback(dueTodayText, FallbackDueTodayText);
-            OneHourLeftFormat = UseFallback(oneHourLeftFormat, FallbackOneHourLeftFormat);
-            ManyHoursLeftFormat = UseFallback(manyHoursLeftFormat, FallbackManyHoursLeftFormat);
-            OneDayOverdueFormat = UseFallback(oneDayOverdueFormat, FallbackOneDayOverdueFormat);
-            ManyDaysOverdueFormat = UseFallback(manyDaysOverdueFormat, FallbackManyDaysOverdueFormat);
-            OneDayOneHourLeftFormat = UseFallback(oneDayOneHourLeftFormat, FallbackOneDayOneHourLeftFormat);
-            OneDayManyHoursLeftFormat = UseFallback(oneDayManyHoursLeftFormat, FallbackOneDayManyHoursLeftFormat);
-            ManyDaysOneHourLeftFormat = UseFallback(manyDaysOneHourLeftFormat, FallbackManyDaysOneHourLeftFormat);
-            ManyDaysManyHoursLeftFormat = UseFallback(manyDaysManyHoursLeftFormat, FallbackManyDaysManyHoursLeftFormat);
+            DefaultTitle = UseFallback(resources.DefaultTitle, FallbackDefaultTitle);
+            OneDayLeftFormat = UseFallback(resources.OneDayLeftFormat, FallbackOneDayLeftFormat);
+            ManyDaysLeftFormat = UseFallback(resources.ManyDaysLeftFormat, FallbackManyDaysLeftFormat);
+            DueTodayText = UseFallback(resources.DueTodayText, FallbackDueTodayText);
+            OneHourLeftFormat = UseFallback(resources.OneHourLeftFormat, FallbackOneHourLeftFormat);
+            ManyHoursLeftFormat = UseFallback(resources.ManyHoursLeftFormat, FallbackManyHoursLeftFormat);
+            OneDayOverdueFormat = UseFallback(resources.OneDayOverdueFormat, FallbackOneDayOverdueFormat);
+            ManyDaysOverdueFormat = UseFallback(resources.ManyDaysOverdueFormat, FallbackManyDaysOverdueFormat);
+            OneDayOneHourLeftFormat = UseFallback(resources.OneDayOneHourLeftFormat, FallbackOneDayOneHourLeftFormat);
+            OneDayManyHoursLeftFormat = UseFallback(resources.OneDayManyHoursLeftFormat, FallbackOneDayManyHoursLeftFormat);
+            ManyDaysOneHourLeftFormat = UseFallback(resources.ManyDaysOneHourLeftFormat, FallbackManyDaysOneHourLeftFormat);
+            ManyDaysManyHoursLeftFormat = UseFallback(resources.ManyDaysManyHoursLeftFormat, FallbackManyDaysManyHoursLeftFormat);
+            OneDayDurationFormat = UseFallback(resources.OneDayDurationFormat, FallbackOneDayDurationFormat);
+            ManyDaysDurationFormat = UseFallback(resources.ManyDaysDurationFormat, FallbackManyDaysDurationFormat);
+            OneHourDurationFormat = UseFallback(resources.OneHourDurationFormat, FallbackOneHourDurationFormat);
+            ManyHoursDurationFormat = UseFallback(resources.ManyHoursDurationFormat, FallbackManyHoursDurationFormat);
+        }
+
+        public static CountdownDisplayText FromResources(Func<string, string?> getString)
+        {
+            return new CountdownDisplayText(new CountdownDisplayTextResources
+            {
+                DefaultTitle = getString("AppName"),
+                OneDayLeftFormat = getString("DaysLeftOneText"),
+                ManyDaysLeftFormat = getString("DaysLeftManyText"),
+                DueTodayText = getString("DueTodayText"),
+                OneHourLeftFormat = getString("HoursLeftOneText"),
+                ManyHoursLeftFormat = getString("HoursLeftManyText"),
+                OneDayOverdueFormat = getString("DaysOverdueOneText"),
+                ManyDaysOverdueFormat = getString("DaysOverdueManyText"),
+                OneDayOneHourLeftFormat = getString("DaysHoursLeftOneDayOneHourText"),
+                OneDayManyHoursLeftFormat = getString("DaysHoursLeftOneDayManyHoursText"),
+                ManyDaysOneHourLeftFormat = getString("DaysHoursLeftManyDaysOneHourText"),
+                ManyDaysManyHoursLeftFormat = getString("DaysHoursLeftManyDaysManyHoursText"),
+                OneDayDurationFormat = getString("DurationOneDayText"),
+                ManyDaysDurationFormat = getString("DurationManyDaysText"),
+                OneHourDurationFormat = getString("DurationOneHourText"),
+                ManyHoursDurationFormat = getString("DurationManyHoursText")
+            });
         }
 
         public string DefaultTitle { get; }
@@ -69,6 +88,14 @@ namespace DateCountdown.Core
         public string ManyDaysOneHourLeftFormat { get; }
 
         public string ManyDaysManyHoursLeftFormat { get; }
+
+        public string OneDayDurationFormat { get; }
+
+        public string ManyDaysDurationFormat { get; }
+
+        public string OneHourDurationFormat { get; }
+
+        public string ManyHoursDurationFormat { get; }
 
         public string FormatTitle(string? title)
         {
@@ -115,10 +142,30 @@ namespace DateCountdown.Core
             return preferences.HourDisplayMode switch
             {
                 CountdownHourDisplayMode.HoursOnly => FormatHoursLeft(CountdownLogic.CalculateHoursLeft(targetDate, now), culture),
+                CountdownHourDisplayMode.DaysAndHours => FormatDaysAndHoursLeft(CountdownLogic.CalculateHoursLeft(targetDate, now), culture),
                 CountdownHourDisplayMode.NearDeadline when daysLeft <= preferences.HoursDisplayThresholdDays =>
                     FormatHoursLeft(CountdownLogic.CalculateHoursLeft(targetDate, now), culture),
                 _ => FormatDaysLeft(daysLeft, culture)
             };
+        }
+
+        public CountdownDisplayContent FormatCountdownContent(
+            DateTimeOffset targetDate,
+            DateTimeOffset now,
+            CountdownPreferences preferences,
+            CultureInfo? culture = null)
+        {
+            string accessibleText = FormatCountdown(targetDate, now, preferences, culture);
+            if (preferences.HourDisplayMode != CountdownHourDisplayMode.DaysAndHours ||
+                CountdownLogic.CalculateDaysLeft(targetDate, now) < 0)
+            {
+                return new CountdownDisplayContent(accessibleText, string.Empty, accessibleText);
+            }
+
+            return FormatDaysAndHoursContentLeft(
+                CountdownLogic.CalculateHoursLeft(targetDate, now),
+                accessibleText,
+                culture);
         }
 
         public string FormatHoursLeft(int hoursLeft, CultureInfo? culture = null)
@@ -157,6 +204,44 @@ namespace DateCountdown.Core
             string format = SelectDaysAndHoursFormat(days, hours);
             string fallbackFormat = SelectFallbackDaysAndHoursFormat(days, hours);
             return FormatTwoNumberedText(days, hours, format, fallbackFormat, culture);
+        }
+
+        private CountdownDisplayContent FormatDaysAndHoursContentLeft(int hoursLeft, string accessibleText, CultureInfo? culture)
+        {
+            if (hoursLeft <= 0)
+            {
+                return new CountdownDisplayContent(DueTodayText, string.Empty, DueTodayText);
+            }
+
+            if (hoursLeft < 24)
+            {
+                string hoursText = FormatHoursLeft(hoursLeft, culture);
+                return new CountdownDisplayContent(hoursText, string.Empty, hoursText);
+            }
+
+            int days = hoursLeft / 24;
+            int hours = hoursLeft % 24;
+            if (hours == 0)
+            {
+                string daysText = FormatDaysLeft(days, culture);
+                return new CountdownDisplayContent(daysText, string.Empty, daysText);
+            }
+
+            string daysDurationText = FormatNumberedText(
+                days,
+                days == 1 ? OneDayDurationFormat : ManyDaysDurationFormat,
+                days == 1 ? FallbackOneDayDurationFormat : FallbackManyDaysDurationFormat,
+                culture);
+            string hoursDurationText = FormatNumberedText(
+                hours,
+                hours == 1 ? OneHourDurationFormat : ManyHoursDurationFormat,
+                hours == 1 ? FallbackOneHourDurationFormat : FallbackManyHoursDurationFormat,
+                culture);
+            return new CountdownDisplayContent(
+                daysDurationText,
+                hoursDurationText,
+                accessibleText,
+                CountdownDisplayLayoutKind.DaysAndHours);
         }
 
         private static string FormatNumberedText(int value, string format, string fallbackFormat, CultureInfo? culture)

@@ -11,6 +11,8 @@ internal sealed class DesktopTrayService : IDisposable
     private const uint SubclassId = 2;
     private const uint WmNull = 0x0000;
     private const uint WmClose = 0x0010;
+    private const uint WmQueryEndSession = 0x0011;
+    private const uint WmEndSession = 0x0016;
     private const uint WmApp = 0x8000;
     private const uint WmTrayIcon = WmApp + 73;
     private const uint WmLButtonUp = 0x0202;
@@ -47,6 +49,7 @@ internal sealed class DesktopTrayService : IDisposable
     private readonly SubclassProc _subclassProc;
     private IntPtr _icon;
     private bool _isTrayIconVisible;
+    private bool _isSessionEnding;
     private bool _isDisposed;
 
     public DesktopTrayService(
@@ -81,15 +84,28 @@ internal sealed class DesktopTrayService : IDisposable
 
     private IntPtr WindowSubclassProc(IntPtr hwnd, uint message, IntPtr wParam, IntPtr lParam, uint subclassId, IntPtr referenceData)
     {
-        if (message == WmClose && _shouldHideToTray())
+        if (message == WmQueryEndSession)
         {
-            HideWindowToTray();
-            return IntPtr.Zero;
+            _isSessionEnding = true;
+            return DefSubclassProc(hwnd, message, wParam, lParam);
+        }
+
+        if (message == WmEndSession)
+        {
+            _isSessionEnding = wParam != IntPtr.Zero;
+            return DefSubclassProc(hwnd, message, wParam, lParam);
+        }
+
+        if (message == WmClose && !_isSessionEnding && _shouldHideToTray())
+        {
+            return TryHideWindowToTray()
+                ? IntPtr.Zero
+                : DefSubclassProc(hwnd, message, wParam, lParam);
         }
 
         if (message == WmTrayIcon)
         {
-            HandleTrayMessage(GetTrayNotification(lParam));
+            HandleTrayMessage(GetTrayNotificationLowWord(lParam));
             return IntPtr.Zero;
         }
 
@@ -104,7 +120,7 @@ internal sealed class DesktopTrayService : IDisposable
             case NinKeySelect:
             case WmLButtonUp:
             case WmLButtonDoubleClick:
-                RestoreWindow();
+                _ = TryRestoreWindow();
                 break;
             case WmRButtonUp:
             case WmContextMenu:
@@ -113,17 +129,28 @@ internal sealed class DesktopTrayService : IDisposable
         }
     }
 
-    private void HideWindowToTray()
+    private bool TryHideWindowToTray()
     {
-        ShowTrayIcon();
+        if (!TryShowTrayIcon())
+        {
+            return false;
+        }
+
         _ = ShowWindow(_hwnd, SwHide);
+        return true;
     }
 
-    private void RestoreWindow()
+    public bool TryRestoreWindow()
     {
+        if (_isDisposed)
+        {
+            return false;
+        }
+
         _ = ShowWindow(_hwnd, SwShow);
         _ = SetForegroundWindow(_hwnd);
         HideTrayIcon();
+        return true;
     }
 
     private void ShowContextMenu()
@@ -146,7 +173,7 @@ internal sealed class DesktopTrayService : IDisposable
             switch (command)
             {
                 case OpenCommandId:
-                    RestoreWindow();
+                    _ = TryRestoreWindow();
                     break;
                 case ExitCommandId:
                     HideTrayIcon();
@@ -160,19 +187,16 @@ internal sealed class DesktopTrayService : IDisposable
         }
     }
 
-    private static uint GetTrayNotification(IntPtr lParam)
+    private static uint GetTrayNotificationLowWord(IntPtr lParam)
     {
-        // NOTIFYICON_VERSION_4 packs the mouse/key notification into the low word.
-        // Older shell versions pass the window message directly. The low-word form
-        // works for both, and keeps right-click context menus reliable.
         return unchecked((uint)(lParam.ToInt64() & 0xFFFF));
     }
 
-    private void ShowTrayIcon()
+    private bool TryShowTrayIcon()
     {
         if (_isTrayIconVisible)
         {
-            return;
+            return true;
         }
 
         _icon = LoadImage(
@@ -182,6 +206,10 @@ internal sealed class DesktopTrayService : IDisposable
             16,
             16,
             LrLoadFromFile);
+        if (_icon == IntPtr.Zero)
+        {
+            return false;
+        }
 
         NotifyIconData data = CreateNotifyIconData();
         if (Shell_NotifyIcon(NimAdd, ref data))
@@ -189,7 +217,12 @@ internal sealed class DesktopTrayService : IDisposable
             data.uVersion = NotifyIconVersion4;
             _ = Shell_NotifyIcon(NimSetVersion, ref data);
             _isTrayIconVisible = true;
+            return true;
         }
+
+        _ = DestroyIcon(_icon);
+        _icon = IntPtr.Zero;
+        return false;
     }
 
     private void HideTrayIcon()

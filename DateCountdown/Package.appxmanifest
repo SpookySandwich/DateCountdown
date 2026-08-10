@@ -7,13 +7,14 @@
   xmlns:uap3="http://schemas.microsoft.com/appx/manifest/uap/windows10/3"
   xmlns:uap5="http://schemas.microsoft.com/appx/manifest/uap/windows10/5"
   xmlns:com="http://schemas.microsoft.com/appx/manifest/com/windows10"
+  xmlns:desktop4="http://schemas.microsoft.com/appx/manifest/desktop/windows10/4"
   xmlns:rescap="http://schemas.microsoft.com/appx/manifest/foundation/windows10/restrictedcapabilities"
-  IgnorableNamespaces="uap uap3 uap5 com rescap">
+  IgnorableNamespaces="uap uap3 uap5 com desktop4 rescap">
 
   <Identity
     Name="43217CharliePu.51462B1C4E466"
     Publisher="CN=8CE3103C-B6FE-4AED-B5B2-F07348E77E01"
-    Version="2.1.0.0" />
+    Version="2.1.1.0" />
 
   <mp:PhoneIdentity PhoneProductId="b6af77c4-2f09-4319-b9b3-5bb30fa09807" PhonePublisherId="00000000-0000-0000-0000-000000000000"/>
 
@@ -36,7 +37,8 @@
   <Applications>
     <Application Id="App"
       Executable="$targetnametoken$.exe"
-      EntryPoint="$targetentrypoint$">
+      EntryPoint="$targetentrypoint$"
+      desktop4:SupportsMultipleInstances="true">
       <Extensions>
         <com:Extension Category="windows.comServer">
           <com:ComServer>
@@ -104,6 +106,14 @@
             TaskId="DateCountdownStartupId"
             Enabled="false"
             DisplayName="ms-resource:AppName" />
+        </uap5:Extension>
+        <uap5:Extension
+          Category="windows.appExecutionAlias"
+          Executable="DateCountdown.Cli.exe"
+          EntryPoint="Windows.FullTrustApplication">
+          <uap5:AppExecutionAlias desktop4:Subsystem="console">
+            <uap5:ExecutionAlias Alias="datecountdown.exe" />
+          </uap5:AppExecutionAlias>
         </uap5:Extension>
       </Extensions>
       <uap:VisualElements

@@ -11,6 +11,7 @@
     <UseWinUI>true</UseWinUI>
     <WinUISDKReferences>false</WinUISDKReferences>
     <EnableMsixTooling>true</EnableMsixTooling>
+    <IncludeCustomOutputGroupForPackaging>true</IncludeCustomOutputGroupForPackaging>
     <Nullable>enable</Nullable>
     <ValidateExecutableReferencesMatchSelfContained>false</ValidateExecutableReferencesMatchSelfContained>
   </PropertyGroup>
@@ -29,40 +30,30 @@
     <Manifest Include="$(ApplicationManifest)" />
   </ItemGroup>
 
-  <!--
-    Defining the "Msix" ProjectCapability here allows the Single-project MSIX Packaging
-    Tools extension to be activated for this project even if the Windows App SDK Nuget
-    package has not yet been restored.
-  -->
   <ItemGroup Condition="'$(DisableMsixProjectCapabilityAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
     <ProjectCapability Include="Msix" />
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\DateCountdown.Cli\DateCountdown.Cli.csproj" ReferenceOutputAssembly="false" />
     <ProjectReference Include="..\DateCountdown.Core\DateCountdown.Core.csproj" />
     <ProjectReference Include="..\DateCountdown.WidgetProvider\DateCountdown.WidgetProvider.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" Version="10.0.28000.1839" />
-    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX" Version="1.7.260518100">
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools" />
+    <PackageReference Include="Microsoft.Windows.SDK.BuildTools.MSIX">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.1.3" />
-    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.3967.48" />
+    <PackageReference Include="Microsoft.WindowsAppSDK" />
+    <PackageReference Include="Microsoft.Web.WebView2" />
   </ItemGroup>
 
-  <!--
-    Defining the "HasPackageAndPublishMenuAddedByProject" property here allows the Solution
-    Explorer "Package and Publish" context menu entry to be enabled for this project even if
-    the Windows App SDK Nuget package has not yet been restored.
-  -->
   <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)'!='true' and '$(EnableMsixTooling)'=='true'">
     <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
   </PropertyGroup>
 
-  <!-- Publish Properties -->
   <PropertyGroup>
     <PublishReadyToRun Condition="'$(Configuration)' == 'Debug'">False</PublishReadyToRun>
     <PublishReadyToRun Condition="'$(Configuration)' != 'Debug'">True</PublishReadyToRun>
@@ -75,26 +66,30 @@
     <GenerateTestArtifacts>False</GenerateTestArtifacts>
     <AppxBundle>Auto</AppxBundle>
     <AppxBundlePlatforms>x86|x64|arm64</AppxBundlePlatforms>
-    <GenerateTemporaryStoreCertificate>True</GenerateTemporaryStoreCertificate>
+    <GenerateTemporaryStoreCertificate>False</GenerateTemporaryStoreCertificate>
     <HoursBetweenUpdateChecks>0</HoursBetweenUpdateChecks>
   </PropertyGroup>
 
-  <Target Name="CopyWidgetProviderOutput" AfterTargets="Build">
+  <Target Name="AddDateCountdownPackagePayload" BeforeTargets="CustomOutputGroupForPackaging" DependsOnTargets="ResolveProjectReferences">
+    <MSBuild Projects="..\DateCountdown.WidgetProvider\DateCountdown.WidgetProvider.csproj" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Configuration=$(Configuration);Platform=$(Platform)">
+      <Output TaskParameter="TargetOutputs" ItemName="_WidgetProviderTargetPath" />
+    </MSBuild>
+    <MSBuild Projects="..\DateCountdown.Cli\DateCountdown.Cli.csproj" Targets="GetTargetPath" BuildInParallel="$(BuildInParallel)" Properties="Configuration=$(Configuration);Platform=$(Platform)">
+      <Output TaskParameter="TargetOutputs" ItemName="_CountdownCliTargetPath" />
+    </MSBuild>
     <PropertyGroup>
-      <WidgetProviderOutput>..\DateCountdown.WidgetProvider\bin\$(Platform)\$(Configuration)\$(TargetFramework)\win-$(Platform)\</WidgetProviderOutput>
+      <WidgetProviderOutput>@(_WidgetProviderTargetPath->'%(RootDir)%(Directory)')</WidgetProviderOutput>
+      <CountdownCliOutput>@(_CountdownCliTargetPath->'%(RootDir)%(Directory)')</CountdownCliOutput>
     </PropertyGroup>
     <ItemGroup>
-      <WidgetProviderOutputFiles Include="$(WidgetProviderOutput)**\*.*" />
-    </ItemGroup>
-    <Copy SourceFiles="@(WidgetProviderOutputFiles)" DestinationFiles="@(WidgetProviderOutputFiles->'$(OutDir)DateCountdown.WidgetProvider\%(RecursiveDir)%(Filename)%(Extension)')" SkipUnchangedFiles="true" Condition="'@(WidgetProviderOutputFiles)' != ''" />
-  </Target>
-
-  <Target Name="AddWidgetProviderPackagePayload" BeforeTargets="_ComputeAppxPackagePayload" DependsOnTargets="CopyWidgetProviderOutput">
-    <ItemGroup>
-      <WidgetProviderPackagePayload Include="$(OutDir)DateCountdown.WidgetProvider\**\*.*" />
-      <AppxPackagePayload Include="@(WidgetProviderPackagePayload)">
-        <TargetPath>DateCountdown.WidgetProvider\%(RecursiveDir)%(Filename)%(Extension)</TargetPath>
-      </AppxPackagePayload>
+      <_WidgetProviderPackagePayload Include="$(WidgetProviderOutput)**\*.*" />
+      <_CountdownCliPackagePayload Include="$(CountdownCliOutput)DateCountdown.Cli.exe;$(CountdownCliOutput)DateCountdown.Cli.dll;$(CountdownCliOutput)DateCountdown.Cli.deps.json;$(CountdownCliOutput)DateCountdown.Cli.runtimeconfig.json" />
+      <CustomOutputGroupForPackagingOutput Include="@(_WidgetProviderPackagePayload)">
+        <TargetPath>DateCountdown.WidgetProvider\%(_WidgetProviderPackagePayload.RecursiveDir)%(_WidgetProviderPackagePayload.Filename)%(_WidgetProviderPackagePayload.Extension)</TargetPath>
+      </CustomOutputGroupForPackagingOutput>
+      <CustomOutputGroupForPackagingOutput Include="@(_CountdownCliPackagePayload)">
+        <TargetPath>%(_CountdownCliPackagePayload.Filename)%(_CountdownCliPackagePayload.Extension)</TargetPath>
+      </CustomOutputGroupForPackagingOutput>
     </ItemGroup>
   </Target>
 </Project>

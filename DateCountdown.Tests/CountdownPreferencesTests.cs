@@ -243,6 +243,17 @@ public sealed class CountdownPreferencesTests
         Assert.False(updated.ShowHoursWithinThreshold);
     }
 
+    [Fact]
+    public void With_CanSwitchToDaysAndHoursMode()
+    {
+        CountdownPreferences preferences = new(showHoursWithinThreshold: true);
+
+        CountdownPreferences updated = preferences.With(hourDisplayMode: CountdownHourDisplayMode.DaysAndHours);
+
+        Assert.Equal(CountdownHourDisplayMode.DaysAndHours, updated.HourDisplayMode);
+        Assert.False(updated.ShowHoursWithinThreshold);
+    }
+
     [Theory]
     [InlineData(-1, 2, 0, 1)]
     [InlineData(0.33, 0.66, 0.33, 0.66)]

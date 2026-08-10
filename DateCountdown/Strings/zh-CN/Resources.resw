@@ -183,10 +183,6 @@
   <data name="CreateStartupTaskFailedNotification.Title" xml:space="preserve">
     <value>需要启动权限</value>
   </data>
-  <data name="DaysLeft.Text" xml:space="preserve">
-    <value>剩余{0:days}天</value>
-    <comment>Aware the space at the beginning</comment>
-  </data>
   <data name="DaysLeftOneText" xml:space="preserve">
     <value>剩余{0}天</value>
   </data>
@@ -208,6 +204,9 @@
   <data name="HourDisplayMode.HoursOnly" xml:space="preserve">
     <value>小时</value>
   </data>
+  <data name="HourDisplayMode.DaysAndHours" xml:space="preserve">
+    <value>天和小时</value>
+  </data>
   <data name="HourDisplayMode.NearDeadline" xml:space="preserve">
     <value>临近截止显示小时</value>
   </data>
@@ -222,6 +221,18 @@
   </data>
   <data name="DaysHoursLeftManyDaysManyHoursText" xml:space="preserve">
     <value>剩余{0}天{1}小时</value>
+  </data>
+  <data name="DurationOneDayText" xml:space="preserve">
+    <value>{0}天</value>
+  </data>
+  <data name="DurationManyDaysText" xml:space="preserve">
+    <value>{0}天</value>
+  </data>
+  <data name="DurationOneHourText" xml:space="preserve">
+    <value>{0}小时</value>
+  </data>
+  <data name="DurationManyHoursText" xml:space="preserve">
+    <value>{0}小时</value>
   </data>
   <data name="DaysOverdueOneText" xml:space="preserve">
     <value>已过期{0}天</value>
@@ -405,7 +416,7 @@
     <value>显示</value>
   </data>
   <data name="Settings.HourDisplayModeDescription" xml:space="preserve">
-    <value>“天”保持简洁；“临近截止显示小时”会在最后设置的天数内显示小时；“小时”始终显示总剩余小时。</value>
+    <value>“天”保持简洁；“天和小时”会显示天数和小于 24 的剩余小时；“临近截止显示小时”会在最后设置的天数内显示小时；“小时”始终显示总剩余小时。</value>
   </data>
   <data name="Settings.HoursDisplayThresholdDaysLabel" xml:space="preserve">
     <value>最后</value>
@@ -559,5 +570,78 @@
   </data>
   <data name="WidgetPreviewAltText" xml:space="preserve">
     <value>日期倒计时小组件预览</value>
+  </data>
+  <data name="Cli.Help" xml:space="preserve">
+    <value>日期倒计时命令行
+
+用法：
+  datecountdown add --title &lt;文本&gt; --at &lt;时间戳&gt; [--timezone &lt;标识符&gt;] [--request-id &lt;标识符&gt;] [--json]
+
+选项：
+  --title       倒计时标题（最多 80 个字符）。
+  --at          包含明确 UTC 偏移量的 RFC 3339 时间戳。
+  --timezone    可选的 IANA 或 Windows 时区标识符。
+  --request-id  可选的 32 位十六进制标识符；重复使用不会创建重复的倒计时。
+  --json        输出机器可读的结果。
+
+示例：
+  datecountdown add --title "提交报告" --at "2026-08-01T17:00:00+08:00" --timezone "Asia/Shanghai"</value>
+  </data>
+  <data name="Cli.HelpHint" xml:space="preserve">
+    <value>运行“datecountdown --help”查看用法。</value>
+  </data>
+  <data name="Cli.Success.Added" xml:space="preserve">
+    <value>已添加“{0}”，目标时间为 {1}。</value>
+  </data>
+  <data name="Cli.Error.UnknownCommand" xml:space="preserve">
+    <value>未知命令：{0}。</value>
+  </data>
+  <data name="Cli.Error.UnknownOption" xml:space="preserve">
+    <value>未知选项：{0}。</value>
+  </data>
+  <data name="Cli.Error.MissingOptionValue" xml:space="preserve">
+    <value>选项 {0} 需要一个值。</value>
+  </data>
+  <data name="Cli.Error.DuplicateOption" xml:space="preserve">
+    <value>选项 {0} 被多次提供。</value>
+  </data>
+  <data name="Cli.Error.MissingTitle" xml:space="preserve">
+    <value>必须提供 --title 选项。</value>
+  </data>
+  <data name="Cli.Error.MissingTargetDate" xml:space="preserve">
+    <value>必须提供 --at 选项。</value>
+  </data>
+  <data name="Cli.Error.InvalidTargetDate" xml:space="preserve">
+    <value>时间戳无效：{0}。请使用包含明确 UTC 偏移量的 RFC 3339 格式，例如 2026-08-01T17:00:00+08:00。</value>
+  </data>
+  <data name="Cli.Error.TitleRequired" xml:space="preserve">
+    <value>倒计时标题不能为空。</value>
+  </data>
+  <data name="Cli.Error.TitleTooLong" xml:space="preserve">
+    <value>倒计时标题不能超过 80 个字符。</value>
+  </data>
+  <data name="Cli.Error.TargetDateInPast" xml:space="preserve">
+    <value>目标时间不能早于当前时间。</value>
+  </data>
+  <data name="Cli.Error.InvalidTimeZone" xml:space="preserve">
+    <value>无法识别此时区标识符。</value>
+  </data>
+  <data name="Cli.Error.InvalidRequestId" xml:space="preserve">
+    <value>日期倒计时拒绝了该自动化请求标识符。</value>
+  </data>
+  <data name="Cli.Error.UnsupportedVersion" xml:space="preserve">
+    <value>此命令与正在运行的日期倒计时版本不兼容。</value>
+  </data>
+  <data name="Cli.Error.InvalidRequest" xml:space="preserve">
+    <value>日期倒计时拒绝了自动化请求。</value>
+  </data>
+  <data name="Cli.Error.InternalError" xml:space="preserve">
+    <value>日期倒计时因内部错误而无法添加倒计时。</value>
+  </data>
+  <data name="Cli.Error.HostUnavailable" xml:space="preserve">
+    <value>日期倒计时正在启动或关闭。请重试此命令。</value>
+  </data>
+  <data name="Cli.Error.PackageUnavailable" xml:space="preserve">
+    <value>请通过 Microsoft Store 应用安装的 datecountdown 别名运行此命令。</value>
   </data>
 </root>

@@ -13,23 +13,33 @@ namespace DateCountdown.Core
 
         public static string NormalizeTimeZoneId(string? timeZoneId)
         {
+            return TryNormalizeTimeZoneId(timeZoneId, out string normalizedTimeZoneId)
+                ? normalizedTimeZoneId
+                : DefaultTimeZoneId;
+        }
+
+        public static bool TryNormalizeTimeZoneId(string? timeZoneId, out string normalizedTimeZoneId)
+        {
             if (string.IsNullOrWhiteSpace(timeZoneId))
             {
-                return DefaultTimeZoneId;
+                normalizedTimeZoneId = DefaultTimeZoneId;
+                return true;
             }
 
             try
             {
-                _ = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId);
-                return timeZoneId;
+                normalizedTimeZoneId = TimeZoneInfo.FindSystemTimeZoneById(timeZoneId).Id;
+                return true;
             }
             catch (TimeZoneNotFoundException)
             {
-                return DefaultTimeZoneId;
+                normalizedTimeZoneId = DefaultTimeZoneId;
+                return false;
             }
             catch (InvalidTimeZoneException)
             {
-                return DefaultTimeZoneId;
+                normalizedTimeZoneId = DefaultTimeZoneId;
+                return false;
             }
         }
 

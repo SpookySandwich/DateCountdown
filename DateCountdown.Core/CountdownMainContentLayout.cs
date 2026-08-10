@@ -48,6 +48,36 @@ namespace DateCountdown.Core
 
             return new MainContentPadding(Math.Max(minimumTopPadding, centeredTopPadding), bottomPadding);
         }
+
+        public static double CalculatePrimaryDurationTextSize(
+            double preferredTextSize,
+            CountdownDisplayLayoutKind layoutKind)
+        {
+            double safeTextSize = double.IsFinite(preferredTextSize) ? Math.Max(0, preferredTextSize) : 0;
+            return layoutKind == CountdownDisplayLayoutKind.DaysAndHours
+                ? Math.Round(safeTextSize * 0.9)
+                : safeTextSize;
+        }
+
+        public static double CalculateSecondaryDurationTextSize(
+            double preferredTextSize,
+            CountdownDisplayLayoutKind layoutKind)
+        {
+            double safeTextSize = double.IsFinite(preferredTextSize) ? Math.Max(0, preferredTextSize) : 0;
+            return layoutKind == CountdownDisplayLayoutKind.DaysAndHours
+                ? Math.Round(safeTextSize * 0.48)
+                : 1;
+        }
+
+        public static double CalculateMainContentMaxWidth(
+            double preferredTextSize,
+            CountdownDisplayLayoutKind layoutKind)
+        {
+            double safeTextSize = double.IsFinite(preferredTextSize) ? Math.Max(0, preferredTextSize) : 0;
+            double widthFactor = layoutKind == CountdownDisplayLayoutKind.DaysAndHours ? 6.2 : 5.4;
+            double maximumWidth = layoutKind == CountdownDisplayLayoutKind.DaysAndHours ? 640 : 560;
+            return Math.Clamp(safeTextSize * widthFactor, 360, maximumWidth);
+        }
     }
 
     public readonly record struct MainContentPadding(double Top, double Bottom);

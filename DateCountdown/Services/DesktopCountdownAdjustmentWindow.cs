@@ -54,6 +54,7 @@ internal sealed class DesktopCountdownAdjustmentWindow : IDisposable
     private IntPtr _hwnd;
     private DesktopCountdownContent _content = new(string.Empty, string.Empty, string.Empty, 72, 14, 0.5, 0.5, 1, string.Empty);
     private Action<double, double, double>? _placementChanged;
+    private Action<double, double, double>? _placementCommitted;
     private TextBounds _textBounds;
     private TextBounds _dragStartBounds;
     private DesktopCountdownContent _dragStartContent = new(string.Empty, string.Empty, string.Empty, 72, 14, 0.5, 0.5, 1, string.Empty);
@@ -64,10 +65,14 @@ internal sealed class DesktopCountdownAdjustmentWindow : IDisposable
 
     public bool IsVisible => DesktopWorkerWindowHostResolver.IsWindowAlive(_hwnd);
 
-    public bool ShowOrUpdate(DesktopCountdownContent content, Action<double, double, double> placementChanged)
+    public bool ShowOrUpdate(
+        DesktopCountdownContent content,
+        Action<double, double, double> placementChanged,
+        Action<double, double, double> placementCommitted)
     {
         _content = content;
         _placementChanged = placementChanged;
+        _placementCommitted = placementCommitted;
         if (!EnsureWindow())
         {
             return false;
@@ -83,16 +88,16 @@ internal sealed class DesktopCountdownAdjustmentWindow : IDisposable
 
     public void Hide()
     {
-        if (_hwnd == IntPtr.Zero)
+        if (_hwnd != IntPtr.Zero)
         {
-            return;
+            s_windows.Remove(_hwnd);
+            _ = DestroyWindow(_hwnd);
+            _hwnd = IntPtr.Zero;
         }
 
-        s_windows.Remove(_hwnd);
-        _ = DestroyWindow(_hwnd);
-        _hwnd = IntPtr.Zero;
         _isDragging = false;
         _placementChanged = null;
+        _placementCommitted = null;
     }
 
     public void Dispose()
@@ -240,6 +245,7 @@ internal sealed class DesktopCountdownAdjustmentWindow : IDisposable
         _isDragging = false;
         _dragMode = DragMode.None;
         _ = ReleaseCapture();
+        _placementCommitted?.Invoke(_content.PositionX, _content.PositionY, _content.Scale);
     }
 
     private void MoveTo(int x, int y, Rect clientRect)

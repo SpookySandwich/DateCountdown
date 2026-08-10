@@ -22,6 +22,26 @@ Date Countdown is a small Windows countdown app built with WinUI 3. It helps you
 - **Sorting**: Sort countdowns by days remaining.
 - **Localization**: Includes English and Simplified Chinese resources.
 
+## Command-line automation
+
+The Microsoft Store/MSIX installation exposes `datecountdown.exe`, so AI tools and scripts can add a countdown without opening the editor:
+
+```powershell
+datecountdown add --title "Submit report" --at "2026-08-01T17:00:00+08:00" --timezone "Asia/Shanghai"
+```
+
+`--at` accepts an RFC 3339 timestamp and must include `Z` or an explicit UTC offset. `--timezone` is optional and accepts either an IANA identifier such as `Asia/Shanghai` or a Windows identifier such as `China Standard Time`. Pass `--request-id` with a 32-digit hexadecimal id to make retries idempotent, add `--json` for a stable machine-readable response, or run `datecountdown --help` for the complete usage text.
+
+### AI agent skill
+
+[skills/date-countdown](skills/date-countdown/SKILL.md) packages the command line as an [Agent Skill](https://agentskills.io) — an open standard supported by Claude Code, Claude, and other agents. To install it for Claude Code, copy the folder into your skills directory:
+
+```powershell
+Copy-Item -Recurse skills/date-countdown "$env:USERPROFILE\.claude\skills\date-countdown"
+```
+
+The agent then adds countdowns on request ("count down to my exam on March 3rd") using the same `datecountdown` command documented above.
+
 ## Requirements
 
 - Windows 10 version 1809 (Build 17763) or later.

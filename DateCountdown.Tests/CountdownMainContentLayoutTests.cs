@@ -52,4 +52,55 @@ public sealed class CountdownMainContentLayoutTests
         Assert.Equal(CountdownMainContentLayout.SelectorMinimumTopPadding, padding.Top);
         Assert.Equal(CountdownMainContentLayout.DefaultBottomPadding, padding.Bottom);
     }
+
+    [Fact]
+    public void CalculatePrimaryDurationTextSize_WithSimpleDuration_UsesPreferredSize()
+    {
+        Assert.Equal(
+            72,
+            CountdownMainContentLayout.CalculatePrimaryDurationTextSize(
+                72,
+                CountdownDisplayLayoutKind.SingleLine));
+    }
+
+    [Fact]
+    public void CalculatePrimaryDurationTextSize_WithCompoundDuration_ScalesPreferredSize()
+    {
+        Assert.Equal(
+            65,
+            CountdownMainContentLayout.CalculatePrimaryDurationTextSize(
+                72,
+                CountdownDisplayLayoutKind.DaysAndHours));
+    }
+
+    [Fact]
+    public void CalculateSecondaryDurationTextSize_WithCompoundDuration_UsesSubordinateSize()
+    {
+        Assert.Equal(
+            35,
+            CountdownMainContentLayout.CalculateSecondaryDurationTextSize(
+                72,
+                CountdownDisplayLayoutKind.DaysAndHours));
+    }
+
+    [Fact]
+    public void CalculateSecondaryDurationTextSize_WithSimpleDuration_KeepsValidFontSize()
+    {
+        Assert.Equal(
+            1,
+            CountdownMainContentLayout.CalculateSecondaryDurationTextSize(
+                72,
+                CountdownDisplayLayoutKind.SingleLine));
+    }
+
+    [Fact]
+    public void CalculateMainContentMaxWidth_WithCompoundDuration_AllowsModerateWidth()
+    {
+        Assert.Equal(
+            446.4,
+            CountdownMainContentLayout.CalculateMainContentMaxWidth(
+                72,
+                CountdownDisplayLayoutKind.DaysAndHours),
+            1);
+    }
 }

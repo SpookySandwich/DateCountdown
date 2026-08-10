@@ -79,19 +79,7 @@ internal sealed class StartupTaskRunner
 
     private CountdownDisplayText CreateDisplayText()
     {
-        return new CountdownDisplayText(
-            GetString("AppName"),
-            GetString("DaysLeftOneText"),
-            GetString("DaysLeftManyText"),
-            GetString("DueTodayText"),
-            GetString("HoursLeftOneText"),
-            GetString("HoursLeftManyText"),
-            GetString("DaysOverdueOneText"),
-            GetString("DaysOverdueManyText"),
-            GetString("DaysHoursLeftOneDayOneHourText"),
-            GetString("DaysHoursLeftOneDayManyHoursText"),
-            GetString("DaysHoursLeftManyDaysOneHourText"),
-            GetString("DaysHoursLeftManyDaysManyHoursText"));
+        return CountdownDisplayText.FromResources(GetString);
     }
 
     private string GetString(string key)

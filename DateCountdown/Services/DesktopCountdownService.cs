@@ -12,6 +12,7 @@ internal sealed class DesktopCountdownService : IDisposable
     private IReadOnlyList<DesktopCountdownContent> _contents = Array.Empty<DesktopCountdownContent>();
     private string _adjustingCountdownId = string.Empty;
     private Action<double, double, double>? _placementChanged;
+    private Action<double, double, double>? _placementCommitted;
     private bool _isAdjusting;
 
     public bool IsVisible => _window.IsVisible;
@@ -37,13 +38,13 @@ internal sealed class DesktopCountdownService : IDisposable
                 return true;
             }
 
-            return _adjustmentWindow.ShowOrUpdate(adjustingContent, _placementChanged ?? ((_, _, _) => { }));
+            return ShowAdjustment(adjustingContent);
         }
 
         return _window.ShowOrUpdate(_contents);
     }
 
-    public bool StartAdjusting(IReadOnlyList<DesktopCountdownContent> contents, string countdownId, Action<double, double, double> placementChanged)
+    public bool StartAdjusting(IReadOnlyList<DesktopCountdownContent> contents, string countdownId, Action<double, double, double> placementCommitted)
     {
         _contents = new ReadOnlyCollection<DesktopCountdownContent>(contents.ToList());
         DesktopCountdownContent? selectedContent = FindContent(countdownId);
@@ -67,11 +68,11 @@ internal sealed class DesktopCountdownService : IDisposable
                 .ToList());
 
             _ = _window.ShowOrUpdate(_contents);
-            placementChanged(x, y, scale);
         };
+        _placementCommitted = placementCommitted;
         _isAdjusting = true;
         _ = _window.ShowOrUpdate(_contents);
-        return _adjustmentWindow.ShowOrUpdate(selectedContent, _placementChanged);
+        return ShowAdjustment(selectedContent);
     }
 
     public void StopAdjusting()
@@ -79,6 +80,7 @@ internal sealed class DesktopCountdownService : IDisposable
         _isAdjusting = false;
         _adjustingCountdownId = string.Empty;
         _placementChanged = null;
+        _placementCommitted = null;
         _adjustmentWindow.Hide();
     }
 
@@ -92,6 +94,7 @@ internal sealed class DesktopCountdownService : IDisposable
         _isAdjusting = false;
         _adjustingCountdownId = string.Empty;
         _placementChanged = null;
+        _placementCommitted = null;
         _contents = Array.Empty<DesktopCountdownContent>();
         _window.Hide();
         _adjustmentWindow.Hide();
@@ -106,5 +109,16 @@ internal sealed class DesktopCountdownService : IDisposable
     private DesktopCountdownContent? FindContent(string countdownId)
     {
         return _contents.FirstOrDefault(content => string.Equals(content.CountdownId, countdownId, StringComparison.Ordinal));
+    }
+
+    private bool ShowAdjustment(DesktopCountdownContent content)
+    {
+        bool shown = _adjustmentWindow.ShowOrUpdate(content, _placementChanged!, _placementCommitted!);
+        if (!shown)
+        {
+            StopAdjusting();
+        }
+
+        return shown;
     }
 }

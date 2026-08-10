@@ -30,4 +30,22 @@ public sealed class CountdownTimeZoneTests
 
         Assert.EndsWith("(UTC-12:00)", text);
     }
+
+    [Fact]
+    public void TryNormalizeTimeZoneId_ValidIanaId_ReturnsSameId()
+    {
+        bool succeeded = CountdownTimeZone.TryNormalizeTimeZoneId("Asia/Shanghai", out string normalizedId);
+
+        Assert.True(succeeded);
+        Assert.Equal("Asia/Shanghai", normalizedId);
+    }
+
+    [Fact]
+    public void TryNormalizeTimeZoneId_InvalidId_ReturnsFalseAndLocalFallback()
+    {
+        bool succeeded = CountdownTimeZone.TryNormalizeTimeZoneId("Not/A-Time-Zone", out string normalizedId);
+
+        Assert.False(succeeded);
+        Assert.Equal(CountdownTimeZone.DefaultTimeZoneId, normalizedId);
+    }
 }

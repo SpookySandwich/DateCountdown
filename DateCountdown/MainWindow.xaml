@@ -76,28 +76,43 @@
                 x:Name="MainContentPanel"
                 MaxWidth="390"
                 MinWidth="296"
-                Padding="32,36,32,40"
+                Padding="28,36,28,40"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
                 Spacing="26">
                 <StackPanel
                     x:Name="CountdownDisplayPanel"
                     HorizontalAlignment="Stretch"
-                    Spacing="4">
-                    <TextBlock
-                        x:Name="TextBlockDays"
-                        x:Uid="DaysLeft"
-                        MaxWidth="560"
-                        MinWidth="296"
+                    Spacing="8">
+                    <StackPanel
+                        x:Name="CountdownDurationPanel"
+                        HorizontalAlignment="Stretch"
+                        Spacing="2"
                         AutomationProperties.AccessibilityView="Content"
-                        AutomationProperties.LiveSetting="Polite"
-                        FontFamily="Segoe UI Variable Display, Segoe UI"
-                        FontSize="72"
-                        FontWeight="Light"
-                        HorizontalAlignment="Center"
-                        MaxLines="2"
-                        TextAlignment="Center"
-                        TextWrapping="Wrap" />
+                        AutomationProperties.LiveSetting="Polite">
+                        <TextBlock
+                            x:Name="TextBlockDays"
+                            FontFamily="Segoe UI Variable Display, Segoe UI"
+                            FontSize="72"
+                            FontWeight="Light"
+                            HorizontalAlignment="Stretch"
+                            MaxLines="1"
+                            TextAlignment="Center"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap" />
+                        <TextBlock
+                            x:Name="TextBlockHours"
+                            FontFamily="Segoe UI Variable Display, Segoe UI"
+                            FontSize="34"
+                            FontWeight="Light"
+                            HorizontalAlignment="Stretch"
+                            MaxLines="1"
+                            Opacity="0.82"
+                            TextAlignment="Center"
+                            TextTrimming="CharacterEllipsis"
+                            TextWrapping="NoWrap"
+                            Visibility="Collapsed" />
+                    </StackPanel>
                     <TextBlock
                         x:Name="TextBlockTitle"
                         MaxWidth="360"
@@ -669,13 +684,26 @@
                                         Spacing="4">
                                         <TextBlock
                                             x:Name="SettingsPreviewDaysText"
-                                            MaxWidth="520"
+                                            MaxWidth="640"
                                             HorizontalAlignment="Center"
                                             FontFamily="Segoe UI Variable Display, Segoe UI"
                                             FontWeight="Light"
-                                            MaxLines="2"
+                                            MaxLines="1"
                                             TextAlignment="Center"
-                                            TextWrapping="Wrap" />
+                                            TextTrimming="CharacterEllipsis"
+                                            TextWrapping="NoWrap" />
+                                        <TextBlock
+                                            x:Name="SettingsPreviewHoursText"
+                                            MaxWidth="640"
+                                            HorizontalAlignment="Center"
+                                            FontFamily="Segoe UI Variable Display, Segoe UI"
+                                            FontWeight="Light"
+                                            Opacity="0.82"
+                                            MaxLines="1"
+                                            TextAlignment="Center"
+                                            TextTrimming="CharacterEllipsis"
+                                            TextWrapping="NoWrap"
+                                            Visibility="Collapsed" />
                                         <TextBlock
                                             x:Name="SettingsPreviewTitleText"
                                             HorizontalAlignment="Center"
@@ -1240,6 +1268,7 @@
                                     Height="180"
                                     AcceptsReturn="True"
                                     FontFamily="Cascadia Mono, Consolas"
+                                    LostFocus="DesktopCountdownCssTextBox_LostFocus"
                                     TextChanged="DesktopCountdownCssTextBox_TextChanged"
                                     TextWrapping="NoWrap" />
                                 <Button

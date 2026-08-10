@@ -146,7 +146,7 @@ public sealed class CountdownWidgetContentTests
     public void BuildDataJson_UsesLocalizedDaysTextAndTitle()
     {
         using CultureScope scope = new("en-US");
-        CountdownDisplayText displayText = new("Countdown", "{0} day", "{0} days");
+        CountdownDisplayText displayText = CreateDisplayText();
         DateTimeOffset now = new(2026, 4, 25, 0, 0, 0, TimeSpan.Zero);
         DateTimeOffset targetDate = new(2026, 5, 8, 0, 0, 0, TimeSpan.Zero);
 
@@ -172,7 +172,13 @@ public sealed class CountdownWidgetContentTests
     [Fact]
     public void BuildDataJson_UsesLocalizedDefaultTitleForBlankTitle()
     {
-        CountdownDisplayText displayText = new("日期倒计时", "剩余{0}天", "剩余{0}天", "今天到期");
+        CountdownDisplayText displayText = new(new CountdownDisplayTextResources
+        {
+            DefaultTitle = "日期倒计时",
+            OneDayLeftFormat = "剩余{0}天",
+            ManyDaysLeftFormat = "剩余{0}天",
+            DueTodayText = "今天到期"
+        });
         DateTimeOffset now = new(2026, 4, 25, 0, 0, 0, TimeSpan.Zero);
 
         using JsonDocument document = JsonDocument.Parse(
@@ -185,7 +191,7 @@ public sealed class CountdownWidgetContentTests
     [Fact]
     public void BuildDataJson_WithEmptyStateReturnsNoCountdownData()
     {
-        CountdownDisplayText displayText = new("Date Countdown", "{0} day", "{0} days");
+        CountdownDisplayText displayText = CreateDisplayText("Date Countdown");
         DateTimeOffset now = new(2026, 4, 25, 0, 0, 0, TimeSpan.Zero);
 
         using JsonDocument document = JsonDocument.Parse(
@@ -201,7 +207,7 @@ public sealed class CountdownWidgetContentTests
     [Fact]
     public void BuildDataJson_UsesHoursWhenPreferenceIsEnabled()
     {
-        CountdownDisplayText displayText = new("Countdown", "{0} day", "{0} days");
+        CountdownDisplayText displayText = CreateDisplayText();
         CountdownPreferences preferences = new(showHoursWithinThreshold: true, hoursDisplayThresholdDays: 2);
         DateTimeOffset now = new(2026, 4, 25, 12, 30, 0, TimeSpan.Zero);
 
@@ -212,10 +218,23 @@ public sealed class CountdownWidgetContentTests
     }
 
     [Fact]
+    public void BuildDataJson_UsesDaysAndHoursWhenPreferenceIsEnabled()
+    {
+        CountdownDisplayText displayText = CreateDisplayText();
+        CountdownPreferences preferences = new(hourDisplayMode: CountdownHourDisplayMode.DaysAndHours);
+        DateTimeOffset now = new(2026, 4, 25, 12, 30, 0, TimeSpan.Zero);
+
+        using JsonDocument document = JsonDocument.Parse(
+            CountdownWidgetContent.BuildDataJson("Launch", now.AddDays(1).AddHours(12), now, displayText, preferences));
+
+        Assert.Equal("1 day 12 hours left", document.RootElement.GetProperty("daysText").GetString());
+    }
+
+    [Fact]
     public void BuildDataJson_ForMultipleCountdowns_IncludesUpcomingListItems()
     {
         using CultureScope scope = new("en-US");
-        CountdownDisplayText displayText = new("Countdown", "{0} day", "{0} days");
+        CountdownDisplayText displayText = CreateDisplayText();
         DateTimeOffset now = new(2026, 4, 25, 0, 0, 0, TimeSpan.Zero);
         CountdownState state = new CountdownState(
             new[]
@@ -247,7 +266,7 @@ public sealed class CountdownWidgetContentTests
     [Fact]
     public void BuildDataJson_ForMultipleCountdowns_LimitsListItems()
     {
-        CountdownDisplayText displayText = new("Countdown", "{0} day", "{0} days");
+        CountdownDisplayText displayText = CreateDisplayText();
         DateTimeOffset now = new(2026, 4, 25, 0, 0, 0, TimeSpan.Zero);
         CountdownState state = new CountdownState(
             new[]
@@ -276,7 +295,7 @@ public sealed class CountdownWidgetContentTests
     [Fact]
     public void BuildDataJson_ForSmallWidget_OmitsListItems()
     {
-        CountdownDisplayText displayText = new("Countdown", "{0} day", "{0} days");
+        CountdownDisplayText displayText = CreateDisplayText();
         DateTimeOffset now = new(2026, 4, 25, 0, 0, 0, TimeSpan.Zero);
         CountdownState state = new CountdownState(
             new[]
@@ -298,7 +317,7 @@ public sealed class CountdownWidgetContentTests
     [Fact]
     public void BuildDataJson_EscapesJsonSpecialCharacters()
     {
-        CountdownDisplayText displayText = new("Countdown", "{0} day", "{0} days");
+        CountdownDisplayText displayText = CreateDisplayText();
         DateTimeOffset now = new(2026, 4, 25, 0, 0, 0, TimeSpan.Zero);
         string title = "Quote \" slash \\ newline\n control " + '\u0001';
 
@@ -306,6 +325,16 @@ public sealed class CountdownWidgetContentTests
             CountdownWidgetContent.BuildDataJson(title, now, now, displayText));
 
         Assert.Equal(title, document.RootElement.GetProperty("title").GetString());
+    }
+
+    private static CountdownDisplayText CreateDisplayText(string defaultTitle = "Countdown")
+    {
+        return new CountdownDisplayText(new CountdownDisplayTextResources
+        {
+            DefaultTitle = defaultTitle,
+            OneDayLeftFormat = "{0} day",
+            ManyDaysLeftFormat = "{0} days"
+        });
     }
 
     private static JsonElement GetWidgetContentItems(JsonDocument document)

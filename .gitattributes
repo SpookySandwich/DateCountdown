@@ -1,3 +1,4 @@
+*.ai -text -diff
 *.ico -text -diff
 *.pdf -text -diff
 *.png -text -diff

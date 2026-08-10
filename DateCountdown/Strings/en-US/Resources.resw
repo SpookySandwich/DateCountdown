@@ -183,10 +183,6 @@
   <data name="CreateStartupTaskFailedNotification.Title" xml:space="preserve">
     <value>Startup permission needed</value>
   </data>
-  <data name="DaysLeft.Text" xml:space="preserve">
-    <value>{0:days} days left</value>
-    <comment>Aware the space at the beginning</comment>
-  </data>
   <data name="DaysLeftOneText" xml:space="preserve">
     <value>{0} day left</value>
   </data>
@@ -208,6 +204,9 @@
   <data name="HourDisplayMode.HoursOnly" xml:space="preserve">
     <value>Hours</value>
   </data>
+  <data name="HourDisplayMode.DaysAndHours" xml:space="preserve">
+    <value>Days and hours</value>
+  </data>
   <data name="HourDisplayMode.NearDeadline" xml:space="preserve">
     <value>Hours near deadline</value>
   </data>
@@ -222,6 +221,18 @@
   </data>
   <data name="DaysHoursLeftManyDaysManyHoursText" xml:space="preserve">
     <value>{0} days {1} hours left</value>
+  </data>
+  <data name="DurationOneDayText" xml:space="preserve">
+    <value>{0} day</value>
+  </data>
+  <data name="DurationManyDaysText" xml:space="preserve">
+    <value>{0} days</value>
+  </data>
+  <data name="DurationOneHourText" xml:space="preserve">
+    <value>{0} hour</value>
+  </data>
+  <data name="DurationManyHoursText" xml:space="preserve">
+    <value>{0} hours</value>
   </data>
   <data name="DaysOverdueOneText" xml:space="preserve">
     <value>{0} day overdue</value>
@@ -404,7 +415,7 @@
     <value>Display</value>
   </data>
   <data name="Settings.HourDisplayModeDescription" xml:space="preserve">
-    <value>Days keeps countdowns simple. Hours near deadline switches to hours during the final configured days. Hours always shows total hours.</value>
+    <value>Days keeps countdowns simple. Days and hours shows a day count plus remaining hours under 24. Hours near deadline switches to hours during the final configured days. Hours always shows total hours.</value>
   </data>
   <data name="Settings.HoursDisplayThresholdDaysLabel" xml:space="preserve">
     <value>Show hours in final</value>
@@ -558,5 +569,78 @@
   </data>
   <data name="WidgetPreviewAltText" xml:space="preserve">
     <value>Date Countdown widget preview</value>
+  </data>
+  <data name="Cli.Help" xml:space="preserve">
+    <value>Date Countdown command line
+
+Usage:
+  datecountdown add --title &lt;text&gt; --at &lt;timestamp&gt; [--timezone &lt;id&gt;] [--request-id &lt;id&gt;] [--json]
+
+Options:
+  --title       Countdown title (up to 80 characters).
+  --at          RFC 3339 timestamp with an explicit UTC offset.
+  --timezone    Optional IANA or Windows time-zone identifier.
+  --request-id  Optional 32-digit hexadecimal id; repeating it never creates a duplicate.
+  --json        Write a machine-readable result.
+
+Example:
+  datecountdown add --title "Submit report" --at "2026-08-01T17:00:00+08:00" --timezone "Asia/Shanghai"</value>
+  </data>
+  <data name="Cli.HelpHint" xml:space="preserve">
+    <value>Run 'datecountdown --help' for usage.</value>
+  </data>
+  <data name="Cli.Success.Added" xml:space="preserve">
+    <value>Added "{0}" for {1}.</value>
+  </data>
+  <data name="Cli.Error.UnknownCommand" xml:space="preserve">
+    <value>Unknown command: {0}.</value>
+  </data>
+  <data name="Cli.Error.UnknownOption" xml:space="preserve">
+    <value>Unknown option: {0}.</value>
+  </data>
+  <data name="Cli.Error.MissingOptionValue" xml:space="preserve">
+    <value>Option {0} requires a value.</value>
+  </data>
+  <data name="Cli.Error.DuplicateOption" xml:space="preserve">
+    <value>Option {0} was provided more than once.</value>
+  </data>
+  <data name="Cli.Error.MissingTitle" xml:space="preserve">
+    <value>The --title option is required.</value>
+  </data>
+  <data name="Cli.Error.MissingTargetDate" xml:space="preserve">
+    <value>The --at option is required.</value>
+  </data>
+  <data name="Cli.Error.InvalidTargetDate" xml:space="preserve">
+    <value>Invalid timestamp: {0}. Use RFC 3339 with an explicit UTC offset, such as 2026-08-01T17:00:00+08:00.</value>
+  </data>
+  <data name="Cli.Error.TitleRequired" xml:space="preserve">
+    <value>The countdown title cannot be empty.</value>
+  </data>
+  <data name="Cli.Error.TitleTooLong" xml:space="preserve">
+    <value>The countdown title cannot exceed 80 characters.</value>
+  </data>
+  <data name="Cli.Error.TargetDateInPast" xml:space="preserve">
+    <value>The target time must not be in the past.</value>
+  </data>
+  <data name="Cli.Error.InvalidTimeZone" xml:space="preserve">
+    <value>The time-zone identifier is not recognized.</value>
+  </data>
+  <data name="Cli.Error.InvalidRequestId" xml:space="preserve">
+    <value>Date Countdown rejected the automation request identifier.</value>
+  </data>
+  <data name="Cli.Error.UnsupportedVersion" xml:space="preserve">
+    <value>This command is not compatible with the running version of Date Countdown.</value>
+  </data>
+  <data name="Cli.Error.InvalidRequest" xml:space="preserve">
+    <value>Date Countdown rejected the automation request.</value>
+  </data>
+  <data name="Cli.Error.InternalError" xml:space="preserve">
+    <value>Date Countdown could not add the countdown because of an internal error.</value>
+  </data>
+  <data name="Cli.Error.HostUnavailable" xml:space="preserve">
+    <value>Date Countdown is starting or closing. Try the command again.</value>
+  </data>
+  <data name="Cli.Error.PackageUnavailable" xml:space="preserve">
+    <value>Run this command through the datecountdown alias installed with the Microsoft Store app.</value>
   </data>
 </root>

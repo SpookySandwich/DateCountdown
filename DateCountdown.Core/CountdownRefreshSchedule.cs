@@ -62,6 +62,7 @@ namespace DateCountdown.Core
             TimeSpan remaining = countdown.TargetDate.ToUniversalTime() - now.ToUniversalTime();
             bool usesHours = remaining > TimeSpan.Zero &&
                 (preferences.HourDisplayMode == CountdownHourDisplayMode.HoursOnly ||
+                    preferences.HourDisplayMode == CountdownHourDisplayMode.DaysAndHours ||
                     preferences.HourDisplayMode == CountdownHourDisplayMode.NearDeadline &&
                     CountdownLogic.CalculateDaysLeft(countdown.TargetDate, now) <= preferences.HoursDisplayThresholdDays);
             TimeSpan interval = usesHours ? TimeSpan.FromHours(1) : TimeSpan.FromDays(1);
