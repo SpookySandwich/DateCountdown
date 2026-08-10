@@ -142,6 +142,68 @@ public sealed class CountdownPreferencesTests
     }
 
     [Fact]
+    public void ToolbarLayout_PromoteToPrimary_MovesOverflowActionBeforeDivider()
+    {
+        CountdownToolbarLayout layout = new(
+            [
+                CountdownToolbarAction.Add,
+                CountdownToolbarAction.Edit,
+                CountdownToolbarAction.Delete,
+                CountdownToolbarAction.StartupNotification,
+                CountdownToolbarAction.GlanceSurface,
+                CountdownToolbarAction.DesktopOverlay
+            ],
+            primaryActionCount: 4);
+
+        CountdownToolbarLayout updated = layout.PromoteToPrimary(CountdownToolbarAction.DesktopOverlay);
+
+        Assert.Equal(
+            [
+                CountdownToolbarAction.Add,
+                CountdownToolbarAction.Edit,
+                CountdownToolbarAction.Delete,
+                CountdownToolbarAction.StartupNotification,
+                CountdownToolbarAction.DesktopOverlay
+            ],
+            updated.PrimaryActions);
+        Assert.Equal([CountdownToolbarAction.GlanceSurface], updated.OverflowActions);
+    }
+
+    [Fact]
+    public void ToolbarLayoutPolicy_ResolveEffectiveLayout_PromotesDesktopOverlayWhenExperimentalFeaturesEnabled()
+    {
+        CountdownToolbarLayout layout = new(
+            [
+                CountdownToolbarAction.Add,
+                CountdownToolbarAction.Edit,
+                CountdownToolbarAction.Delete,
+                CountdownToolbarAction.StartupNotification,
+                CountdownToolbarAction.GlanceSurface,
+                CountdownToolbarAction.DesktopOverlay
+            ],
+            primaryActionCount: 4);
+
+        CountdownToolbarLayout updated = CountdownToolbarLayoutPolicy.ResolveEffectiveLayout(
+            layout,
+            experimentalFeaturesEnabled: true);
+
+        Assert.True(updated.IsPrimary(CountdownToolbarAction.DesktopOverlay));
+        Assert.DoesNotContain(CountdownToolbarAction.DesktopOverlay, updated.OverflowActions);
+    }
+
+    [Fact]
+    public void ToolbarLayoutPolicy_ResolveEffectiveLayout_PreservesLayoutWhenExperimentalFeaturesDisabled()
+    {
+        CountdownToolbarLayout layout = CountdownToolbarLayout.Default;
+
+        CountdownToolbarLayout updated = CountdownToolbarLayoutPolicy.ResolveEffectiveLayout(
+            layout,
+            experimentalFeaturesEnabled: false);
+
+        Assert.Same(layout, updated);
+    }
+
+    [Fact]
     public void ParseActions_WithUnknownValues_UsesKnownActionsAndFillsMissingDefaults()
     {
         IReadOnlyList<CountdownToolbarAction> actions =

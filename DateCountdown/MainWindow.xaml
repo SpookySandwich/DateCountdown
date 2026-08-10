@@ -80,11 +80,6 @@
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
                 Spacing="26">
-                <StackPanel.ChildrenTransitions>
-                    <TransitionCollection>
-                        <RepositionThemeTransition />
-                    </TransitionCollection>
-                </StackPanel.ChildrenTransitions>
                 <StackPanel
                     x:Name="CountdownDisplayPanel"
                     HorizontalAlignment="Stretch"
@@ -115,24 +110,6 @@
                         TextTrimming="CharacterEllipsis"
                         TextWrapping="WrapWholeWords" />
                 </StackPanel>
-
-                <StackPanel
-                    x:Name="EmptyStatePanel"
-                    MaxWidth="360"
-                    HorizontalAlignment="Center"
-                    Visibility="Collapsed"
-                    AutomationProperties.AutomationId="EmptyCountdownState">
-                    <TextBlock
-                        x:Name="EmptyStateTitleText"
-                        FontFamily="Segoe UI Variable Display, Segoe UI"
-                        FontSize="32"
-                        FontWeight="Light"
-                        HorizontalAlignment="Center"
-                        Opacity="0.72"
-                        TextAlignment="Center"
-                        TextWrapping="WrapWholeWords" />
-                </StackPanel>
-
                 <StackPanel
                     x:Name="InlineEditorPanel"
                     HorizontalAlignment="Stretch"
@@ -141,11 +118,9 @@
                     Spacing="10"
                     Visibility="Collapsed"
                     AutomationProperties.AutomationId="InlineCountdownEditor">
-                    <StackPanel.ChildrenTransitions>
-                        <TransitionCollection>
-                            <RepositionThemeTransition />
-                        </TransitionCollection>
-                    </StackPanel.ChildrenTransitions>
+                    <StackPanel.RenderTransform>
+                        <TranslateTransform />
+                    </StackPanel.RenderTransform>
                     <TextBlock
                         x:Name="EditorTitleText"
                         FontSize="12"
@@ -260,9 +235,6 @@
                                     x:Key="ButtonBorderBrushDisabled"
                                     Color="Transparent" />
                             </Button.Resources>
-                            <Button.RenderTransform>
-                                <TranslateTransform />
-                            </Button.RenderTransform>
                             <FontIcon
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                 FontSize="16"
@@ -277,9 +249,6 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Click="TileButton_Click">
-                            <Button.RenderTransform>
-                                <TranslateTransform />
-                            </Button.RenderTransform>
                             <FontIcon
                                 x:Name="GlanceSurfaceIcon"
                                 FontFamily="Segoe MDL2 Assets"
@@ -299,9 +268,6 @@
                             IsHitTestVisible="False"
                             IsTabStop="False"
                             Visibility="Collapsed">
-                            <Button.RenderTransform>
-                                <TranslateTransform />
-                            </Button.RenderTransform>
                             <FontIcon
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                 FontSize="16"
@@ -320,9 +286,6 @@
                             IsHitTestVisible="False"
                             IsTabStop="False"
                             Visibility="Collapsed">
-                            <Button.RenderTransform>
-                                <TranslateTransform />
-                            </Button.RenderTransform>
                             <FontIcon
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                 FontSize="16"
@@ -341,9 +304,6 @@
                             IsHitTestVisible="False"
                             IsTabStop="False"
                             Visibility="Collapsed">
-                            <Button.RenderTransform>
-                                <TranslateTransform />
-                            </Button.RenderTransform>
                             <FontIcon
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                 FontSize="16"
@@ -358,9 +318,6 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Click="EditButton_Click">
-                            <Button.RenderTransform>
-                                <TranslateTransform />
-                            </Button.RenderTransform>
                             <FontIcon
                                 x:Name="EditButtonIcon"
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
@@ -376,9 +333,6 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Click="AddButton_Click">
-                            <Button.RenderTransform>
-                                <TranslateTransform />
-                            </Button.RenderTransform>
                             <FontIcon
                                 x:Name="AddButtonIcon"
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
@@ -394,9 +348,6 @@
                             Background="Transparent"
                             BorderThickness="0"
                             Click="DesktopCountdownButton_Click">
-                            <Button.RenderTransform>
-                                <TranslateTransform />
-                            </Button.RenderTransform>
                             <FontIcon
                                 FontFamily="Segoe Fluent Icons, Segoe MDL2 Assets"
                                 FontSize="16"
@@ -410,9 +361,6 @@
                             AutomationProperties.AutomationId="MoreButton"
                             Background="Transparent"
                             BorderThickness="0">
-                            <Button.RenderTransform>
-                                <TranslateTransform />
-                            </Button.RenderTransform>
                             <Button.Flyout>
                                 <MenuFlyout>
                                     <MenuFlyoutItem
@@ -957,20 +905,22 @@
                                             StrokeThickness="2" />
                                     </Canvas>
                                 </Viewbox>
-                                <TextBlock
-                                    x:Name="ExperimentalFeaturesTitleText"
+                                <StackPanel
                                     Grid.Column="1"
+                                    Grid.RowSpan="2"
                                     VerticalAlignment="Center"
-                                    FontWeight="SemiBold"
-                                    TextWrapping="WrapWholeWords" />
-                                <TextBlock
-                                    x:Name="ExperimentalFeaturesDescriptionText"
-                                    Grid.Row="1"
-                                    Grid.Column="1"
-                                    HorizontalAlignment="Left"
-                                    MaxWidth="440"
-                                    Opacity="0.72"
-                                    TextWrapping="WrapWholeWords" />
+                                    Spacing="2">
+                                    <TextBlock
+                                        x:Name="ExperimentalFeaturesTitleText"
+                                        FontWeight="SemiBold"
+                                        TextWrapping="WrapWholeWords" />
+                                    <TextBlock
+                                        x:Name="ExperimentalFeaturesDescriptionText"
+                                        HorizontalAlignment="Left"
+                                        MaxWidth="440"
+                                        Opacity="0.72"
+                                        TextWrapping="WrapWholeWords" />
+                                </StackPanel>
                                 <ToggleSwitch
                                     x:Name="ExperimentalFeaturesToggle"
                                     Grid.Column="2"

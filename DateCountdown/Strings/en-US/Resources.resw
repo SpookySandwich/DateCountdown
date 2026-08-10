@@ -118,7 +118,7 @@
     <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
   </resheader>
   <data name="AppName" xml:space="preserve">
-    <value>Date Countdown</value>
+    <value>Date Countdowns</value>
   </data>
   <data name="AppDescription" xml:space="preserve">
     <value>Track saved countdowns for important dates.</value>
@@ -169,7 +169,7 @@
     <value>New countdown</value>
   </data>
   <data name="MainWindow.Title" xml:space="preserve">
-    <value>Date Countdown</value>
+    <value>Date Countdowns</value>
   </data>
   <data name="NewCountdownTitleFormat" xml:space="preserve">
     <value>Countdown {0}</value>
@@ -527,7 +527,7 @@
     <value>About</value>
   </data>
   <data name="Settings.AboutDescription" xml:space="preserve">
-    <value>Date Countdown</value>
+    <value>Date Countdowns</value>
   </data>
   <data name="Settings.SourceCodeLink" xml:space="preserve">
     <value>Star on GitHub</value>

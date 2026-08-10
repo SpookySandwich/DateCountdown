@@ -136,11 +136,50 @@ namespace DateCountdown.Core
                 toastEnabled: false);
         }
 
+        public CountdownState AddDefaultCountdown(DateTimeOffset targetDate, Func<int, string> titleFactory)
+        {
+            ArgumentNullException.ThrowIfNull(titleFactory);
+            HashSet<string> existingTitles = CreateExistingTitleSet(Countdowns);
+
+            CountdownItem countdown = new(
+                Guid.NewGuid().ToString("N"),
+                CreateUniqueDefaultTitle(titleFactory, Countdowns.Count + 1, existingTitles),
+                targetDate);
+
+            return AddCountdown(countdown, selectCountdown: true);
+        }
+
+        private static HashSet<string> CreateExistingTitleSet(IEnumerable<CountdownItem> countdowns)
+        {
+            return new HashSet<string>(
+                countdowns
+                    .Select(countdown => countdown.Title)
+                    .Where(title => !string.IsNullOrWhiteSpace(title)),
+                StringComparer.CurrentCultureIgnoreCase);
+        }
+
+        private static string CreateUniqueDefaultTitle(Func<int, string> titleFactory, int initialNumber, ISet<string> existingTitles)
+        {
+            int candidateNumber = Math.Max(1, initialNumber);
+            for (int attempts = 0; attempts < existingTitles.Count + 1000; attempts++, candidateNumber++)
+            {
+                string title = CountdownItem.NormalizeTitle(titleFactory(candidateNumber));
+                if (!string.IsNullOrWhiteSpace(title) && !existingTitles.Contains(title))
+                {
+                    existingTitles.Add(title);
+                    return title;
+                }
+            }
+
+            return CountdownItem.NormalizeTitle(titleFactory(Math.Max(1, initialNumber)));
+        }
+
         public CountdownState WithDefaultTitles(Func<int, string> titleFactory)
         {
             ArgumentNullException.ThrowIfNull(titleFactory);
 
             List<CountdownItem>? countdowns = null;
+            HashSet<string> existingTitles = CreateExistingTitleSet(Countdowns);
             for (int index = 0; index < Countdowns.Count; index++)
             {
                 CountdownItem countdown = Countdowns[index];
@@ -151,7 +190,7 @@ namespace DateCountdown.Core
                 }
 
                 countdowns ??= Countdowns.Take(index).ToList();
-                countdowns.Add(countdown.With(title: titleFactory(index + 1)));
+                countdowns.Add(countdown.With(title: CreateUniqueDefaultTitle(titleFactory, index + 1, existingTitles)));
             }
 
             return countdowns is null

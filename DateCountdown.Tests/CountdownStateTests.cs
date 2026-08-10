@@ -195,6 +195,56 @@ public sealed class CountdownStateTests
     }
 
     [Fact]
+    public void AddDefaultCountdown_CreatesNamedCountdownAndSelectsIt()
+    {
+        CountdownState state = new("First", DateTimeOffset.UnixEpoch, tileEnabled: true, toastEnabled: false);
+        DateTimeOffset targetDate = DateTimeOffset.UnixEpoch.AddDays(5);
+
+        CountdownState updated = state.AddDefaultCountdown(targetDate, number => $"Countdown {number}");
+
+        Assert.Equal(2, updated.Countdowns.Count);
+        Assert.Equal(updated.Countdowns[1].Id, updated.SelectedCountdownId);
+        Assert.Equal("Countdown 2", updated.Title);
+        Assert.Equal(targetDate, updated.TargetDate);
+        Assert.True(updated.TileEnabled);
+    }
+
+    [Fact]
+    public void AddDefaultCountdown_PreservesExistingCountdownNotifications()
+    {
+        CountdownState state = new("First", DateTimeOffset.UnixEpoch, tileEnabled: false, toastEnabled: true);
+
+        CountdownState updated = state.AddDefaultCountdown(
+            DateTimeOffset.UnixEpoch.AddDays(5),
+            number => $"Countdown {number}");
+
+        Assert.False(updated.ToastEnabled);
+        Assert.True(updated.AnyToastEnabled);
+        Assert.True(updated.Countdowns[0].ToastEnabled);
+        Assert.False(updated.Countdowns[1].ToastEnabled);
+    }
+
+    [Fact]
+    public void AddDefaultCountdown_SkipsExistingDefaultTitles()
+    {
+        CountdownState state = new CountdownState(
+            new[]
+            {
+                new CountdownItem("first", "Countdown 1", DateTimeOffset.UnixEpoch),
+                new CountdownItem("third", "Countdown 3", DateTimeOffset.UnixEpoch.AddDays(1))
+            },
+            selectedCountdownId: "first",
+            tileEnabled: false,
+            toastEnabled: false);
+
+        CountdownState updated = state.AddDefaultCountdown(
+            DateTimeOffset.UnixEpoch.AddDays(5),
+            number => $"Countdown {number}");
+
+        Assert.Equal("Countdown 4", updated.Title);
+    }
+
+    [Fact]
     public void WithDefaultTitles_NamesOnlyBlankCountdowns()
     {
         CountdownState state = new CountdownState(
@@ -216,6 +266,27 @@ public sealed class CountdownStateTests
         Assert.True(updated.TileEnabled);
         Assert.True(updated.Countdowns[0].ToastEnabled);
         Assert.True(updated.Countdowns[2].ToastEnabled);
+    }
+
+    [Fact]
+    public void WithDefaultTitles_SkipsExistingDefaultTitles()
+    {
+        CountdownState state = new CountdownState(
+            new[]
+            {
+                new CountdownItem("first", string.Empty, DateTimeOffset.UnixEpoch),
+                new CountdownItem("second", "Countdown 1", DateTimeOffset.UnixEpoch.AddDays(1)),
+                new CountdownItem("third", "   ", DateTimeOffset.UnixEpoch.AddDays(2))
+            },
+            selectedCountdownId: "third",
+            tileEnabled: false,
+            toastEnabled: false);
+
+        CountdownState updated = state.WithDefaultTitles(number => $"Countdown {number}");
+
+        Assert.Equal(new[] { "Countdown 2", "Countdown 1", "Countdown 3" }, updated.Countdowns.Select(item => item.Title));
+        Assert.Equal("third", updated.SelectedCountdownId);
+        Assert.Equal("Countdown 3", updated.Title);
     }
 
     [Fact]

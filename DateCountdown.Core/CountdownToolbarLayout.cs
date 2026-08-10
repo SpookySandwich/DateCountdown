@@ -48,6 +48,27 @@ public sealed class CountdownToolbarLayout
         return Actions.Take(PrimaryActionCount).Contains(action);
     }
 
+    public CountdownToolbarLayout PromoteToPrimary(CountdownToolbarAction action)
+    {
+        if (!Actions.Contains(action) || IsPrimary(action))
+        {
+            return this;
+        }
+
+        List<CountdownToolbarAction?> actions = Actions
+            .Where(existingAction => existingAction != action)
+            .Take(PrimaryActionCount)
+            .Select(existingAction => (CountdownToolbarAction?)existingAction)
+            .ToList();
+        actions.Add(action);
+        actions.AddRange(Actions
+            .Where(existingAction => existingAction != action)
+            .Skip(PrimaryActionCount)
+            .Select(existingAction => (CountdownToolbarAction?)existingAction));
+
+        return new CountdownToolbarLayout(actions, PrimaryActionCount + 1);
+    }
+
     public CountdownToolbarLayout With(
         IEnumerable<CountdownToolbarAction?>? actions = null,
         int? primaryActionCount = null)
