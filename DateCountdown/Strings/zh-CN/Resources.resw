@@ -571,6 +571,12 @@
   <data name="WidgetPreviewAltText" xml:space="preserve">
     <value>日期倒计时小组件预览</value>
   </data>
+  <data name="Settings.AiSkillDescription" xml:space="preserve">
+    <value>AI 助手可以通过随附的命令行技能添加倒计时。</value>
+  </data>
+  <data name="Settings.AiSkillLink" xml:space="preserve">
+    <value>打开 AI 技能文件夹</value>
+  </data>
   <data name="Cli.Help" xml:space="preserve">
     <value>日期倒计时命令行
 

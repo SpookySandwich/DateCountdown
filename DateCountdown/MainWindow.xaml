@@ -1011,6 +1011,16 @@
                             x:Name="SourceCodeLinkButton"
                             Padding="0"
                             NavigateUri="https://github.com/SpookySandwich/DateCountdown" />
+                        <TextBlock
+                            x:Name="AiSkillDescriptionText"
+                            Margin="0,8,0,0"
+                            Opacity="0.72"
+                            TextWrapping="WrapWholeWords" />
+                        <HyperlinkButton
+                            x:Name="AiSkillFolderButton"
+                            AutomationProperties.AutomationId="AiSkillFolderButton"
+                            Padding="0"
+                            Click="AiSkillFolderButton_Click" />
                     </StackPanel>
                 </StackPanel>
             </StackPanel>

@@ -7,8 +7,10 @@ using Microsoft.UI.Xaml.Media;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using Windows.ApplicationModel;
+using Windows.System;
 
 namespace DateCountdown;
 
@@ -86,6 +88,8 @@ public sealed partial class MainWindow
         AboutAppNameText.Text = GetString("AppName");
         AboutVersionText.Text = GetAppVersion();
         SourceCodeLinkButton.Content = GetString("Settings/SourceCodeLink");
+        AiSkillDescriptionText.Text = GetString("Settings/AiSkillDescription");
+        AiSkillFolderButton.Content = GetString("Settings/AiSkillLink");
 
         AutomationProperties.SetName(SortCountdownsToggle, SortCountdownsTitleText.Text);
         AutomationProperties.SetHelpText(SortCountdownsToggle, GetString("Settings/SortCountdownsDescription"));
@@ -128,6 +132,8 @@ public sealed partial class MainWindow
         AutomationProperties.SetHelpText(DesktopCountdownCssTextBox, DesktopCountdownStyleDescriptionText.Text);
         AutomationProperties.SetName(ResetDesktopCountdownStyleButton, GetString("Settings/DesktopCountdownResetStyleButton"));
         AutomationProperties.SetName(SourceCodeLinkButton, GetString("Settings/SourceCodeLink"));
+        AutomationProperties.SetName(AiSkillFolderButton, GetString("Settings/AiSkillLink"));
+        AutomationProperties.SetHelpText(AiSkillFolderButton, AiSkillDescriptionText.Text);
 
         DaysTextSizeSlider.Minimum = CountdownPreferences.MinDaysTextSize;
         DaysTextSizeSlider.Maximum = CountdownPreferences.MaxDaysTextSize;
@@ -422,6 +428,11 @@ public sealed partial class MainWindow
     private void SettingsBackButton_Click(object sender, RoutedEventArgs e)
     {
         ShowCountdownPage();
+    }
+
+    private async void AiSkillFolderButton_Click(object sender, RoutedEventArgs e)
+    {
+        _ = await Launcher.LaunchFolderPathAsync(Path.Combine(AppContext.BaseDirectory, "skills", "date-countdown"));
     }
 
     private void ToolbarLayoutEntryButton_Click(object sender, RoutedEventArgs e)

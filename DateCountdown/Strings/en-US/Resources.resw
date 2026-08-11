@@ -570,6 +570,12 @@
   <data name="WidgetPreviewAltText" xml:space="preserve">
     <value>Date Countdown widget preview</value>
   </data>
+  <data name="Settings.AiSkillDescription" xml:space="preserve">
+    <value>AI assistants can add countdowns through the bundled command-line skill.</value>
+  </data>
+  <data name="Settings.AiSkillLink" xml:space="preserve">
+    <value>Open AI skill folder</value>
+  </data>
   <data name="Cli.Help" xml:space="preserve">
     <value>Date Countdown command line
 
